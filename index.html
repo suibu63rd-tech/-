@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マーチング・ドリル・シミュレーター (小節概念導入版)</title>
+    <title>マーチング・ドリル・シミュレーター</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
@@ -14,7 +14,6 @@
             line-height: 1.6;
         }
         
-        /* 🏢 ヘッダー＆右上管理エリア */
         header {
             background-color: #1e3a8a;
             color: white;
@@ -35,7 +34,6 @@
             gap: 10px;
             flex-wrap: wrap;
         }
-        /* 薄い色の区分ボックス */
         .control-group-box {
             background: rgba(255, 255, 255, 0.1);
             padding: 6px 12px;
@@ -44,13 +42,12 @@
             align-items: center;
             gap: 8px;
         }
-        /* 各機能専用の背景色（色分け用） */
         .group-data-io {
-            background: rgba(13, 148, 136, 0.15); /* エメラルド系 */
+            background: rgba(13, 148, 136, 0.15); 
             border: 1px solid rgba(13, 148, 136, 0.3);
         }
         .group-pdf-export {
-            background: rgba(225, 29, 72, 0.15); /* ローズ系 */
+            background: rgba(225, 29, 72, 0.15);
             border: 1px solid rgba(225, 29, 72, 0.3);
         }
         
@@ -77,7 +74,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        /* 📜 メインレイアウト */
         .main-wrapper {
             max-width: 1500px;
             margin: 20px auto;
@@ -86,11 +82,9 @@
             gap: 20px;
         }
         
-        /* 👁️ 閲覧モード */
         .main-wrapper.view-layout {
             grid-template-columns: 1.6fr 1fr;
         }
-        /* 🛠️ 編集モード */
         .main-wrapper.edit-layout {
             grid-template-columns: 2fr 1fr;
         }
@@ -278,7 +272,6 @@
         .sidebar-edit-only { display: none; }
         .visual-color-indicator { width: 18px; height: 18px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3); display: inline-block; vertical-align: middle; }
         
-        /* 🏃 自分の動き確認タイムラインボックス */
         .personal-timeline-box { overflow-y: auto; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; background: #fafafa; box-sizing: border-box; }
         .personal-timeline-box.view-mode { height: 380px; }
         .personal-timeline-box.edit-mode { height: 180px; }
@@ -298,14 +291,12 @@
         .member-checkbox-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 100px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; padding: 6px; border-radius: 4px; margin-top: 5px; }
         .member-checkbox-list label { font-size: 0.8em; display: flex; align-items: center; gap: 3px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
 
-        /* ⏱️ 全体タイムライン編集 */
         .timeline-container { max-height: 220px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: white; padding: 5px; margin-top: 10px; }
         .timeline-row { display: flex; align-items: center; gap: 6px; padding: 4px; border-bottom: 1px solid #f1f5f9; font-size: 0.85em; cursor: pointer; }
         .timeline-row:hover { background-color: #f8fafc; }
         .timeline-row.selected-row { background-color: #fef2f2; border-left: 4px solid #ef4444; font-weight: bold; }
         .timeline-row span { min-width: 75px; color: #475569; font-family: monospace; }
 
-        /* 🖥️ 全画面表示モード用スタイル */
         body.fullscreen-active header,
         body.fullscreen-active .mode-tabs,
         body.fullscreen-active .card:not(#main-field-card):not(#personal-movement-card),
@@ -327,7 +318,6 @@
             justify-content: flex-start;
         }
 
-        /* 📄 印刷用 */
         @media print {
             body { background: white; color: black; font-size: 11pt; }
             header, .mode-tabs, .main-wrapper { display: none !important; }
@@ -362,27 +352,27 @@
         </div>
         
         <div class="control-group-box group-data-io">
-            <button onclick="exportDrillAsJSON()" class="success" style="background-color: #0d9488; padding: 6px 10px; font-size:0.85em;" title="JSONをPCへ保存">📥 PCへDL</button>
-            <button onclick="document.getElementById('upload-json-file').click()" class="secondary" style="background-color: #6366f1; padding: 6px 10px; font-size:0.85em;" title="JSONファイル読み込み">📤 読込</button>
+            <button onclick="exportDrillAsJSON()" class="success" style="background-color: #0d9488; padding: 6px 10px; font-size:0.85em;" title="JSONをPCへ保存">PCへDL</button>
+            <button onclick="document.getElementById('upload-json-file').click()" class="secondary" style="background-color: #6366f1; padding: 6px 10px; font-size:0.85em;" title="JSONファイル読み込み">読込</button>
             <input type="file" id="upload-json-file" accept=".json" style="display: none;" onchange="importDrillFromJSON(this)">
         </div>
 
         <div class="control-group-box group-pdf-export">
-            <button onclick="openPrintPDFWindow()" class="success" style="background-color: #e11d48; padding: 6px 12px; font-size:0.85em;">📄 PDF・指示書印刷</button>
+            <button onclick="openPrintPDFWindow()" class="success" style="background-color: #e11d48; padding: 6px 12px; font-size:0.85em;">📄 PDFへ</button>
         </div>
     </div>
 </header>
 
 <div class="mode-tabs">
-    <button class="tab-btn active" id="tab-view" onclick="switchMode('view')">👁️ 閲覧用モード (メンバー向)</button>
-    <button class="tab-btn" id="tab-edit" onclick="switchMode('edit')">🛠️ 編集用モード (指導者向)</button>
+    <button class="tab-btn active" id="tab-view" onclick="switchMode('view')">閲覧用モード</button>
+    <button class="tab-btn" id="tab-edit" onclick="switchMode('edit')">編集用モード</button>
 </div>
 
 <div class="main-wrapper view-layout" id="main-layout-wrapper">
     
     <div class="left-column">
         <div id="top-view-panel" class="card">
-            <h2>👤 メンバー向け確認パネル (マイポジション選択)</h2>
+            <h2>個人確認パネル(マイポジション選択)</h2>
             <div class="controls">
                 <label for="select-member" style="font-weight: bold;">マイポジションを選択:</label>
                 <select id="select-member" onchange="selectedMemberId=parseInt(this.value); updateHighlight();" style="font-size:1.05em; padding:6px;"></select>
@@ -392,7 +382,7 @@
 
         <div class="card" id="main-field-card">
             <h2>メインフィールド</h2>
-            <div id="edit-notice" class="edit-indicator" style="display:none;">🛠️ 編集モード</div>
+            <div id="edit-notice" class="edit-indicator" style="display:none;">編集モード</div>
             
             <div id="formation-guide" class="formation-overlay-guide">
                 <span id="formation-guide-text">ガイドテキスト</span>
@@ -425,9 +415,9 @@
             <div class="note-box" id="note-display">ノート: 読み込み中...</div>
 
             <div class="controls">
-                <button id="btn-toggle-play" style="width: 140px;" onclick="togglePlay()">▶️ 再生</button>
-                <button id="btn-undo" class="secondary" onclick="undo()">↩️ 戻る</button>
-                <button id="btn-redo" class="secondary" onclick="redo()">↪️ 進める</button>
+                <button id="btn-toggle-play" style="width: 140px;" onclick="togglePlay()">▶再生</button>
+                <button id="btn-undo" class="secondary" onclick="undo()">戻る</button>
+                <button id="btn-redo" class="secondary" onclick="redo()">進める</button>
                 <select id="select-speed" onchange="if(isPlaying){ togglePlay(); togglePlay(); }">
                     <option value="0.5">0.5倍速</option>
                     <option value="0.75">0.75倍速</option>
@@ -437,13 +427,13 @@
                 </select>
                 <label><input type="checkbox" id="chk-sound" checked> クリック音</label>
                 
-                <button onclick="toggleFullscreenView()" style="background-color: #0f172a; margin-left: auto;">🖥️ 全画面表示切替</button>
+                <button onclick="toggleFullscreenView()" style="background-color: #0f172a; margin-left: auto;">全画面表示</button>
             </div>
         </div>
 
         <div id="section-edit" class="mode-section">
             <div class="card">
-                <h2>🛠️ ドリルデータ編集パネル</h2>
+                <h2>ドリルデータ編集</h2>
                 <div class="edit-panel-layout">
                     <div>
                         <div class="edit-block">
@@ -466,10 +456,10 @@
                                 <strong>選択中:</strong> <span id="picked-member-name" style="color:#ef4444; font-weight:bold;">なし</span>
                                 <div id="picked-member-edit-fields" style="margin-top:6px; display:none; font-size:0.85em;">
                                     <label>パート名: <input type="text" id="edit-member-part" oninput="changeMemberPart(this.value)" style="padding:4px; width:110px; font-size:0.9em;"></label>
-                                    <div style="margin-top:8px; margin-bottom:4px; font-weight:bold;">メンバーカラー (10色):</div>
+                                    <div style="margin-top:8px; margin-bottom:4px; font-weight:bold;">メンバーカラー:</div>
                                     <div class="color-palette" id="edit-member-color-palette"></div>
                                     <div style="margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px; text-align: right;">
-                                        <button onclick="deleteSelectedMemberAction()" class="danger" style="font-size:0.8em; padding:5px 10px;">🗑️ このメンバーを削除する</button>
+                                        <button onclick="deleteSelectedMemberAction()" class="danger" style="font-size:0.8em; padding:5px 10px;">このメンバーを削除する</button>
                                     </div>
                                 </div>
                             </div>
@@ -494,10 +484,10 @@
                             <div class="member-checkbox-list" id="group-member-checkboxes"></div>
                             
                             <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #bbf7d0; display:flex; flex-direction:column; gap:6px;">
-                                <div style="font-size:0.85em; font-weight:bold; color:#166534;">📐 選択中のグループを一括整列配置:</div>
-                                <button class="secondary" style="padding:6px; font-size:0.8em; text-align:left; background-color:#166534;" onclick="startFormation('line')">➖ 直線上に等間隔で並べる (起点→終点)</button>
-                                <button class="secondary" style="padding:6px; font-size:0.8em; text-align:left; background-color:#15803d;" onclick="startFormation('arc')">🌙 円弧状に並べる (起点→終点→ふくらみ中心点)</button>
-                                <button class="secondary" style="padding:6px; font-size:0.8em; text-align:left; background-color:#1e3a8a;" onclick="startFormation('circle')">⭕ 正円形に並べる (円の中心点→半径の端点)</button>
+                                <div style="font-size:0.85em; font-weight:bold; color:#166534;">選択中のグループを一括整列配置:</div>
+                                <button class="secondary" style="padding:6px; font-size:0.8em; text-align:left; background-color:#166534;" onclick="startFormation('line')">直線上に等間隔で並べる (起点→終点)</button>
+                                <button class="secondary" style="padding:6px; font-size:0.8em; text-align:left; background-color:#15803d;" onclick="startFormation('arc')">円弧状に並べる (起点→終点→ふくらみ中心点)</button>
+                                <button class="secondary" style="padding:6px; font-size:0.8em; text-align:left; background-color:#1e3a8a;" onclick="startFormation('circle')">正円形に並べる (円の中心点→半径の端点)</button>
                             </div>
                         </div>
                     </div>
@@ -508,21 +498,21 @@
 
     <div class="right-column" id="right-column-container">
         <div class="card" id="side-subfields-card">
-            <h2>👁️ 各セットの全体像</h2>
+            <h2>各セットの全体像</h2>
             <div class="side-subfields-scroll view-mode" id="side-subfields-container"></div>
         </div>
 
         <div class="card" id="personal-movement-card">
-            <h2 id="personal-timeline-title">🏃 自分の動き確認</h2>
-            <div id="target-member-display-badge" class="target-member-badge">🎯 対象: 未選択</div>
+            <h2 id="personal-timeline-title">自分の動き確認</h2>
+            <div id="target-member-display-badge" class="target-member-badge">対象: 未選択</div>
             <div id="personal-timeline" class="personal-timeline-box view-mode"></div>
         </div>
 
         <div class="card sidebar-edit-only" id="sidebar-timeline-card">
-            <h2>⏱️ タイムライン設定 & 変則編集</h2>
+            <h2>タイムライン設定 & 変則編集</h2>
             
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 12px;">
-                <div style="font-weight:bold; font-size:0.85em; margin-bottom:6px; color:#1e3a8a;">⚙️ 基本拍子設定</div>
+                <div style="font-weight:bold; font-size:0.85em; margin-bottom:6px; color:#1e3a8a;">基本拍子設定</div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <label for="input-meter" style="font-size:0.85em;">1小節あたりの拍数:</label>
                     <select id="input-meter" onchange="document.getElementById('disp-metro').innerText = this.value + '/4拍子'; rebuildTimelineStructure(); saveStorage();">
@@ -534,13 +524,13 @@
             </div>
 
             <div style="background: #fff5f5; border: 1px solid #fed7d7; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
-                <div style="font-weight:bold; font-size:0.85em; margin-bottom:6px; color:#c53030;">⚠️ タイムライン変則編集ツール</div>
+                <div style="font-weight:bold; font-size:0.85em; margin-bottom:6px; color:#c53030;">タイムライン変則編集ツール</div>
                 <div style="font-size:0.75em; color:#742a2a; margin-bottom:8px;">現在選択している「拍行」に対してピンポイントで実行します</div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
                     <button onclick="insertCustomBeatAtSelected()" class="success" style="font-size:0.75em; padding:5px;">＋ 選択位置に「1拍」挿入</button>
                     <button onclick="insertCustomMeasureAtSelected()" class="success" style="font-size:0.75em; padding:5px; background-color:#4f46e5;">＋ 新小節をまるごと挿入</button>
                 </div>
-                <button onclick="deleteCustomBeatAtSelected()" class="danger" style="font-size:0.75em; padding:5px; width:100%; margin-top:5px;">🗑️ 選択されているこの1拍を完全削除</button>
+                <button onclick="deleteCustomBeatAtSelected()" class="danger" style="font-size:0.75em; padding:5px; width:100%; margin-top:5px;">選択されているこの1拍を完全削除</button>
             </div>
 
             <div class="timeline-container" id="timeline-container"></div>
@@ -562,7 +552,6 @@
     let lastAnimTime = 0;
     let lastPlayedCount = -1;
 
-    // 小節・拍を厳密にマッピングするための配列。各要素が { set: 1, measure: 1, beat: 1 } の情報を持つ
     let beatStructure = [];
 
     let setEndCounts = [0, 0, 8, 16]; 
@@ -614,7 +603,6 @@
         } catch(e) { console.error(e); rebuildTimelineStructure(); }
     }
 
-    /* 🧭 拍構造（小節・拍数）を自動的に再構築する関数 */
     function rebuildTimelineStructure() {
         const baseMeter = parseInt(document.getElementById('input-meter').value) || 4;
         beatStructure = [];
@@ -625,7 +613,6 @@
         let currentBeat = 1;
 
         for (let i = 0; i <= totalCount; i++) {
-            // セットの切り替わりチェック
             for (let s = 1; s <= totalSetsCount; s++) {
                 if (i === setEndCounts[s]) {
                     currentSet = s;
@@ -664,14 +651,14 @@
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                if (!data.members || !data.setEndCounts) return alert("正しい形式のドリルファイルではありません。");
+                if (!data.members || !data.setEndCounts) return alert("正しい形式のドリルファイルではありません");
                 if (!confirm("現在のデータを上書きしてJSONを読み込みますか？")) return;
                 setEndCounts = data.setEndCounts; totalSetsCount = data.totalSetsCount; GLOBAL_GROUPS = data.GLOBAL_GROUPS || { "全体一括": [] }; setGroups = data.setGroups || {}; members = data.members; notes = data.notes || {}; countTempos = data.countTempos || { 0: 120 };
                 if (data.meter) { document.getElementById('input-meter').value = data.meter; document.getElementById('disp-metro').innerText = data.meter + '/4拍子'; }
                 if (data.beatStructure) beatStructure = data.beatStructure; else rebuildTimelineStructure();
                 if (members.length > 0) selectedMemberId = members[0].id;
-                saveStorage(); currentCount = 0; refreshAllUI(); alert("読み込みに成功しました！");
-            } catch (err) { alert("ファイルの読み込みに失敗しました。"); }
+                saveStorage(); currentCount = 0; refreshAllUI(); alert("読み込みに成功しました");
+            } catch (err) { alert("ファイルの読み込みに失敗しました"); }
         };
         reader.readAsText(file); inputEl.value = '';
     }
@@ -684,10 +671,10 @@
     }
 
     function saveCurrentDrillSlot() {
-        let nameInput = document.getElementById('input-save-name'); let slotName = nameInput.value.trim(); if(!slotName) return alert("名前を入力してください。");
+        let nameInput = document.getElementById('input-save-name'); let slotName = nameInput.value.trim(); if(!slotName) return alert("名前を入力してください");
         let slots = getSavedSlots(); if(slots.includes(slotName)) { if(!confirm("上書きしますか？")) return; } else { slots.push(slotName); localStorage.setItem(SLOTS_INDEX_KEY, JSON.stringify(slots)); }
         const payload = { setEndCounts, totalSetsCount, GLOBAL_GROUPS, setGroups, members, notes, countTempos, meter: document.getElementById('input-meter').value, beatStructure };
-        localStorage.setItem('marching_slot_' + slotName, JSON.stringify(payload)); alert("保存しました！"); nameInput.value = ''; updateSlotsSelectorUI();
+        localStorage.setItem('marching_slot_' + slotName, JSON.stringify(payload)); alert("保存しました"); nameInput.value = ''; updateSlotsSelectorUI();
     }
 
     function loadSelectedDrillSlot() {
@@ -700,7 +687,7 @@
             if (data.beatStructure) beatStructure = data.beatStructure; else rebuildTimelineStructure();
             if (members.length > 0) selectedMemberId = members[0].id;
             saveStorage(); currentCount = 0; refreshAllUI();
-        } catch(e) { alert("ロード失敗しました"); }
+        } catch(e) { alert("ロードに失敗しました"); }
     }
 
     function deleteSelectedDrillSlot() {
@@ -712,7 +699,6 @@
     let undoStack = []; let redoStack = []; let currentSelectedGroupName = "全体一括";
     function getSetName(index) { if (index === 1) return "0"; return String.fromCharCode(65 + (index - 2)); }
     
-    /* 🎵 3階層「セット-小節-拍」文字列を書き出すロジック */
     function getSetAndBeatString(count) {
         let idx = Math.floor(count);
         if (idx >= beatStructure.length) idx = beatStructure.length - 1;
@@ -804,11 +790,11 @@
 
     function updateGroupUI() {
         if (!setGroups[editingSet]) setGroups[editingSet] = {}; const groupSelect = document.getElementById('select-edit-group'); groupSelect.innerHTML = '';
-        let gOpt = document.createElement('optgroup'); gOpt.label = "🌟 共通グループ";
+        let gOpt = document.createElement('optgroup'); gOpt.label = "共通グループ";
         Object.keys(GLOBAL_GROUPS).forEach(gName => { let opt = document.createElement('option'); opt.value = "GLOBAL:" + gName; opt.innerText = gName; if("GLOBAL:" + gName === currentSelectedGroupName || gName === currentSelectedGroupName) { opt.selected = true; currentSelectedGroupName = "GLOBAL:" + gName; } gOpt.appendChild(opt); });
         groupSelect.appendChild(gOpt);
         
-        let sOpt = document.createElement('optgroup'); sOpt.label = "📦 このセット内限定";
+        let sOpt = document.createElement('optgroup'); sOpt.label = "このセット内限定";
         Object.keys(setGroups[editingSet]).forEach(sName => { let opt = document.createElement('option'); opt.value = "SET:" + sName; opt.innerText = sName; if("SET:" + sName === currentSelectedGroupName) opt.selected = true; sOpt.appendChild(opt); });
         groupSelect.appendChild(sOpt);
 
@@ -820,8 +806,8 @@
     
     function createGlobalGroupAction() {
         let input = document.getElementById('input-new-global-group'); let gName = input.value.trim();
-        if(!gName) return alert("グループ名を入力してください。");
-        if(GLOBAL_GROUPS[gName]) return alert("既に存在する共通グループ名です。");
+        if(!gName) return alert("グループ名を入力してください");
+        if(GLOBAL_GROUPS[gName]) return alert("既に存在する共通グループ名です");
         saveHistory(); GLOBAL_GROUPS[gName] = []; currentSelectedGroupName = "GLOBAL:" + gName; input.value = ''; updateGroupUI();
     }
 
@@ -841,7 +827,7 @@
     function removeLastSet() { if(totalSetsCount <= 2) return; saveHistory(); if(editingSet === totalSetsCount) editingSet--; totalSetsCount--; setEndCounts.pop(); rebuildTimelineStructure(); refreshAllUI(); changeEditingSet(editingSet); }
     
     function addNewMemberDirect() {
-        let inputEl = document.getElementById('input-new-member-name'); let name = inputEl.value.trim(); if(!name) { alert("メンバー名を入力してください。"); return; }
+        let inputEl = document.getElementById('input-new-member-name'); let name = inputEl.value.trim(); if(!name) { alert("メンバー名を入力してください"); return; }
         saveHistory(); let newId = members.length > 0 ? Math.max(...members.map(m => m.id)) + 1 : 0;
         let newMember = { id: newId, name: name, part: "一般", color: "#ef4444", positions: {}, personalNotes: {} };
         for(let s=1; s<=totalSetsCount; s++) { newMember.positions[s] = { x: 50, y: 50 }; }
@@ -855,21 +841,18 @@
         saveHistory(); members = members.filter(m => m.id !== selectedMemberId);
         Object.keys(GLOBAL_GROUPS).forEach(gName => { GLOBAL_GROUPS[gName] = GLOBAL_GROUPS[gName].filter(id => id !== selectedMemberId); });
         Object.keys(setGroups).forEach(sNum => { Object.keys(setGroups[sNum]).forEach(gName => { setGroups[sNum][gName] = setGroups[sNum][gName].filter(id => id !== selectedMemberId); }); });
-        selectedMemberId = members.length > 0 ? members[0].id : 0; saveStorage(); refreshAllUI(); alert("メンバーを削除しました。");
+        selectedMemberId = members.length > 0 ? members[0].id : 0; saveStorage(); refreshAllUI(); alert("メンバーを削除しました");
     }
 
-    /* ⏱️ イレギュラータイムラインコントロール用関数群 */
     function insertCustomBeatAtSelected() {
         saveHistory();
         let targetCount = Math.floor(currentCount);
         let segment = getSegmentDetails(targetCount).currentIdx;
         
-        // 後続セットのカウント位置をすべて1つずらす
         for(let i = segment + 1; i <= totalSetsCount + 1; i++) {
             if(setEndCounts[i] !== undefined) setEndCounts[i] += 1;
         }
 
-        // notes / countTempos のオブジェクトキーも1つ後ろへ退避させる
         shiftObjectKeysBackward(targetCount + 1, 1);
         rebuildTimelineStructure();
         refreshAllUI();
@@ -894,7 +877,7 @@
         let targetCount = Math.floor(currentCount);
         let segment = getSegmentDetails(targetCount).currentIdx;
         if((setEndCounts[segment+1] - setEndCounts[segment]) <= 1) {
-            alert("セットの総拍数を0にすることはできません。");
+            alert("セットの総拍数を0にすることはできません");
             return;
         }
         
@@ -903,7 +886,6 @@
             if(setEndCounts[i] !== undefined) setEndCounts[i] -= 1;
         }
 
-        // 特定の位置のメモ・テンポ情報を詰め寄せる
         delete notes[targetCount];
         delete countTempos[targetCount];
         members.forEach(m => { if(m.personalNotes) delete m.personalNotes[targetCount]; });
@@ -915,7 +897,6 @@
     }
 
     function shiftObjectKeysBackward(startCount, amount) {
-        // notes
         let newNotes = {};
         Object.keys(notes).forEach(k => {
             let keyInt = parseInt(k);
@@ -924,7 +905,6 @@
         });
         notes = newNotes;
 
-        // countTempos
         let newTempos = {};
         Object.keys(countTempos).forEach(k => {
             let keyInt = parseInt(k);
@@ -933,7 +913,6 @@
         });
         countTempos = newTempos;
 
-        // personalNotes
         members.forEach(m => {
             if(m.personalNotes) {
                 let newPNotes = {};
@@ -1042,7 +1021,7 @@
 
     function buildPersonalMovementTimeline() {
         const container = document.getElementById('personal-timeline'); let m = members.find(m => m.id === selectedMemberId); if (!m) { container.innerHTML = ''; return; }
-        document.getElementById('target-member-display-badge').innerText = `🎯 対象: ${m.name}`; container.innerHTML = '';
+        document.getElementById('target-member-display-badge').innerText = `対象: ${m.name}`; container.innerHTML = '';
         for (let i = 0; i <= getMaxCount(); i++) {
             let seg = getSegmentDetails(i); let posA = m.positions[seg.currentIdx] || {x:50, y:50}; let posB = m.positions[seg.nextIdx] || posA;
             let cx = posA.x + (posB.x - posA.x) * seg.ratio; let cy = posA.y + (posB.y - posA.y) * seg.ratio;
@@ -1056,7 +1035,7 @@
     function buildSubFields() {
         const sideContainer = document.getElementById('side-subfields-container'); if(!sideContainer) return; sideContainer.innerHTML = '';
         for(let s=1; s<=totalSetsCount; s++) {
-            let box = document.createElement('div'); box.className = 'sub-field-box'; box.innerHTML = `<div><span style="font-size:0.8em; font-weight:bold; color:#10b981;">■ セット ${getSetName(s)} 全体像</span></div>`;
+            let box = document.createElement('div'); box.className = 'sub-field-box'; box.innerHTML = `<div><span style="font-size:0.8em; font-weight:bold; color:#10b981;">セット ${getSetName(s)} 全体像</span></div>`;
             let sField = document.createElement('div'); sField.className = 'sub-field-container'; createFieldGrid(sField);
             members.forEach(m => {
                 let sDot = document.createElement('div'); let highlightClass = (m.id === selectedMemberId) ? "sub-dot active-subdot" : "sub-dot";
@@ -1088,10 +1067,10 @@
         const btn = document.getElementById('btn-toggle-play'); let maxC = getMaxCount();
         if (isPlaying) {
             isPlaying = false; if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
-            btn.innerText = "▶️ 再生"; btn.style.backgroundColor = "#2563eb";
+            btn.innerText = "▶再生"; btn.style.backgroundColor = "#2563eb";
         } else {
             if (currentCount >= maxC) { currentCount = 0; lastPlayedCount = -1; }
-            isPlaying = true; btn.innerText = "⏸️ 一時停止"; btn.style.backgroundColor = "#dc2626";
+            isPlaying = true; btn.innerText = "一時停止"; btn.style.backgroundColor = "#dc2626";
             lastAnimTime = performance.now(); lastPlayedCount = Math.floor(currentCount) - 1;
             animationFrameId = requestAnimationFrame(animationLoop);
         }
@@ -1108,7 +1087,7 @@
         currentCount += deltaCount; let maxC = getMaxCount();
         if (currentCount >= maxC) {
             currentCount = maxC; isPlaying = false; animationFrameId = null;
-            document.getElementById('btn-toggle-play').innerText = "▶️ 再生";
+            document.getElementById('btn-toggle-play').innerText = "▶再生";
             document.getElementById('btn-toggle-play').style.backgroundColor = "#2563eb";
             updateFrameGraphic(); return;
         }
@@ -1155,9 +1134,9 @@
     function startFormation(type) {
         activeTool = type; toolStep = 1; toolPoints = [];
         const guide = document.getElementById('formation-guide'); guide.style.display = 'block';
-        if(type === 'line') { document.getElementById('formation-guide-text').innerText = "【直線配置】 1点目：起点（スタート端）をクリックしてください。"; }
-        else if(type === 'arc') { document.getElementById('formation-guide-text').innerText = "【円弧配置】 1点目：起点（スタート端）をクリックしてください。"; }
-        else if(type === 'circle') { document.getElementById('formation-guide-text').innerText = "【正円配置】 1点目：円の中心となる点をクリックしてください。"; }
+        if(type === 'line') { document.getElementById('formation-guide-text').innerText = "【直線配置】 1点目：起点（スタート端）をクリックしてください"; }
+        else if(type === 'arc') { document.getElementById('formation-guide-text').innerText = "【円弧配置】 1点目：起点（スタート端）をクリックしてください"; }
+        else if(type === 'circle') { document.getElementById('formation-guide-text').innerText = "【正円配置】 1点目：円の中心となる点をクリックしてください"; }
     }
     
     function cancelFormation() { activeTool = null; toolStep = 0; toolPoints = []; document.getElementById('formation-guide').style.display = 'none'; }
@@ -1171,11 +1150,11 @@
 
         let ids = currentSelectedGroupName.startsWith("GLOBAL:") ? GLOBAL_GROUPS[currentSelectedGroupName.replace("GLOBAL:", "")] : setGroups[editingSet][currentSelectedGroupName.replace("SET:", "")];
         let targetGroupMembers = members.filter(m => ids.includes(m.id));
-        if (targetGroupMembers.length === 0) { alert("選択されたグループにメンバーがいません。"); cancelFormation(); return; }
+        if (targetGroupMembers.length === 0) { alert("選択されたグループにメンバーがいません"); cancelFormation(); return; }
 
         if (activeTool === 'line') {
             if (toolStep === 1) {
-                toolStep = 2; document.getElementById('formation-guide-text').innerText = "【直線配置】 2点目：終点（ラスト端）をクリックしてください。";
+                toolStep = 2; document.getElementById('formation-guide-text').innerText = "【直線配置】 2点目：終点（ラスト端）をクリックしてください";
             } else if (toolStep === 2) {
                 saveHistory();
                 targetGroupMembers.forEach((m, i) => {
@@ -1187,9 +1166,9 @@
         } 
         else if (activeTool === 'arc') {
             if (toolStep === 1) {
-                toolStep = 2; document.getElementById('formation-guide-text').innerText = "【円弧配置】 2点目：終点（ラスト端）をクリックしてください。";
+                toolStep = 2; document.getElementById('formation-guide-text').innerText = "【円弧配置】 2点目：終点（ラスト端）をクリックしてください";
             } else if (toolStep === 2) {
-                toolStep = 3; document.getElementById('formation-guide-text').innerText = "【円弧配置】 3点目：弧の頂点（中央のふくらみ）をクリックしてください。";
+                toolStep = 3; document.getElementById('formation-guide-text').innerText = "【円弧配置】 3点目：弧の頂点（中央のふくらみ）をクリックしてください";
             } else if (toolStep === 3) {
                 saveHistory();
                 let p1 = toolPoints[0], p2 = toolPoints[1], p3 = toolPoints[2];
@@ -1204,7 +1183,7 @@
         } 
         else if (activeTool === 'circle') {
             if (toolStep === 1) {
-                toolStep = 2; document.getElementById('formation-guide-text').innerText = "【正円配置】 2点目：半径の端点（円周上のどこか1点）をクリックしてください。";
+                toolStep = 2; document.getElementById('formation-guide-text').innerText = "【正円配置】 2点目：半径の端点（円周上のどこか1点）をクリックしてください";
             } else if (toolStep === 2) {
                 saveHistory();
                 let center = toolPoints[0], edge = toolPoints[1];
@@ -1237,7 +1216,7 @@
             });
         } else {
             document.getElementById('picked-member-name').innerText = "なし"; document.getElementById('picked-member-edit-fields').style.display = "none";
-            document.getElementById('target-member-display-badge').innerText = `🎯 対象: 未選択`;
+            document.getElementById('target-member-display-badge').innerText = `対象: 未選択`;
         }
         members.forEach(m => {
             let dot = document.getElementById(`member-${m.id}`); let badge = document.getElementById(`badge-${m.id}`);
@@ -1250,10 +1229,10 @@
     function openPrintPDFWindow() {
         let targetMember = members.find(m => m.id === selectedMemberId); if(!targetMember) return alert("マイポジションを先に選択してください。");
         if(isPlaying) togglePlay(); const printArea = document.getElementById('print-pdf-area'); printArea.innerHTML = '';
-        let htmlContent = `<div class="pdf-page-header"><h1 style="margin:0; font-size:18pt;">マーチング・ドリル指示書</h1><p style="margin:4px 0 0 0; font-size:11pt;">🎯 マイポジション: <strong>${targetMember.name}</strong></p></div>`;
+        let htmlContent = `<div class="pdf-page-header"><h1 style="margin:0; font-size:18pt;">マーチング・ドリル指示書</h1><p style="margin:4px 0 0 0; font-size:11pt;">マイポジション: <strong>${targetMember.name}</strong></p></div>`;
         for (let s = 1; s <= totalSetsCount; s++) {
             let startCount = setEndCounts[s]; let endCount = (s < totalSetsCount) ? setEndCounts[s + 1] : startCount + 8; let duration = endCount - startCount;
-            htmlContent += `<div class="pdf-set-row"><div class="pdf-left-map"><div class="pdf-map-title">■ セット ${getSetName(s)} （${getSetAndBeatString(startCount)}〜 / 計 ${duration}拍）</div><div class="sub-field-container">${generateGridLinesHTML()}${generateDotsWithCoordinatesHTMLForSet(s)}</div></div><div class="pdf-right-info"><div class="pdf-beat-list-title">⏱️ カウント別動き</div><table class="pdf-beat-table"><thead><tr><th style="width:25%;">カウント位置</th><th style="width:35%;">マイ座標</th><th style="width:40%;">指示ノート</th></tr></thead><tbody>${generateBeatRowsHTML(s, startCount, endCount, targetMember)}</tbody></table></div></div>`;
+            htmlContent += `<div class="pdf-set-row"><div class="pdf-left-map"><div class="pdf-map-title">セット ${getSetName(s)} （${getSetAndBeatString(startCount)}〜 / 計 ${duration}拍）</div><div class="sub-field-container">${generateGridLinesHTML()}${generateDotsWithCoordinatesHTMLForSet(s)}</div></div><div class="pdf-right-info"><div class="pdf-beat-list-title">⏱️ カウント別動き</div><table class="pdf-beat-table"><thead><tr><th style="width:25%;">カウント位置</th><th style="width:35%;">マイ座標</th><th style="width:40%;">指示ノート</th></tr></thead><tbody>${generateBeatRowsHTML(s, startCount, endCount, targetMember)}</tbody></table></div></div>`;
         }
         printArea.innerHTML = htmlContent; window.print();
     }
