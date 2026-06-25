@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マーチング・ドリル・シミュレーター (座標＆グループ強化版)</title>
+    <title>マーチング・ドリル・シミュレーター (小節概念導入版)</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
@@ -13,12 +13,47 @@
             padding: 0;
             line-height: 1.6;
         }
+        
+        /* 🏢 ヘッダー＆右上管理エリア */
         header {
             background-color: #1e3a8a;
             color: white;
-            padding: 15px 20px;
-            text-align: center;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
+        header h1 {
+            margin: 0;
+            font-size: 1.4em;
+        }
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        /* 薄い色の区分ボックス */
+        .control-group-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* 各機能専用の背景色（色分け用） */
+        .group-data-io {
+            background: rgba(13, 148, 136, 0.15); /* エメラルド系 */
+            border: 1px solid rgba(13, 148, 136, 0.3);
+        }
+        .group-pdf-export {
+            background: rgba(225, 29, 72, 0.15); /* ローズ系 */
+            border: 1px solid rgba(225, 29, 72, 0.3);
+        }
+        
         .mode-tabs {
             display: flex;
             justify-content: center;
@@ -42,25 +77,31 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
+        /* 📜 メインレイアウト */
         .main-wrapper {
-            max-width: 1200px;
+            max-width: 1500px;
             margin: 20px auto;
             padding: 0 20px;
             display: grid;
-            grid-template-columns: 3fr 1fr;
             gap: 20px;
-            align-items: stretch;
-        }
-        @media (max-width: 900px) {
-            .main-wrapper { grid-template-columns: 1fr; }
         }
         
-        .left-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        /* 👁️ 閲覧モード */
+        .main-wrapper.view-layout {
+            grid-template-columns: 1.6fr 1fr;
         }
-        .right-column {
+        /* 🛠️ 編集モード */
+        .main-wrapper.edit-layout {
+            grid-template-columns: 2fr 1fr;
+        }
+        
+        @media (max-width: 950px) {
+            .main-wrapper.view-layout, .main-wrapper.edit-layout { 
+                grid-template-columns: 1fr; 
+            }
+        }
+        
+        .left-column, .right-column {
             display: flex;
             flex-direction: column;
             gap: 20px;
@@ -73,15 +114,12 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             box-sizing: border-box;
         }
-        #personal-movement-card {
-            display: flex;
-            flex-direction: column;
-        }
         h2 {
             margin-top: 0;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 8px;
             color: #1e3a8a;
+            font-size: 1.2em;
         }
         .field-container {
             position: relative;
@@ -105,13 +143,10 @@
             background: #cbd5e1;
             border-radius: 6px;
             cursor: pointer;
-            user-select: none;
         }
         .video-timeline-progress {
             position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
+            left: 0; top: 0; height: 100%;
             background: #ef4444;
             border-radius: 6px 0 0 6px;
             width: 0%;
@@ -119,10 +154,7 @@
         }
         .video-timeline-handle {
             position: absolute;
-            top: 50%;
-            left: 0%;
-            width: 18px;
-            height: 18px;
+            top: 50%; left: 0%; width: 18px; height: 18px;
             background: #ef4444;
             border: 2px solid white;
             border-radius: 50%;
@@ -143,12 +175,8 @@
             overflow-y: auto;
             padding-right: 5px;
         }
-        .side-subfields-scroll.view-mode {
-            max-height: none;
-        }
-        .side-subfields-scroll.edit-mode {
-            max-height: 750px;
-        }
+        .side-subfields-scroll.view-mode { max-height: 380px; }
+        .side-subfields-scroll.edit-mode { max-height: 250px; }
 
         .sub-field-box {
             margin-bottom: 15px;
@@ -165,44 +193,22 @@
             border-radius: 4px;
             margin-top: 5px;
         }
-        .grid-line {
-            position: absolute;
-            background-color: rgba(255,255,255,0.2);
-        }
-        /* 主要な4歩・8歩のグリッド線を少し目立たせる */
-        .grid-line.major {
-            background-color: rgba(255,255,255,0.45);
-        }
-        /* フィールド上の座標軸の数字ラベル */
-        .axis-label {
-            position: absolute;
-            font-size: 9px;
-            color: rgba(255,255,255,0.6);
-            pointer-events: none;
-            font-family: monospace;
-        }
+        .grid-line { position: absolute; background-color: rgba(255,255,255,0.2); }
+        .grid-line.major { background-color: rgba(255,255,255,0.45); }
+        
         .member-dot {
             position: absolute;
-            width: 14px;
-            height: 14px;
+            width: 14px; height: 14px;
             border-radius: 50%;
             transform: translate(-50%, -50%);
             cursor: pointer;
             border: 2px solid #fff;
-            user-select: none;
-            touch-action: none;
             z-index: 2;
         }
         .member-dot.active {
             box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.6) !important;
             border: 2px solid #ef4444 !important;
             z-index: 10;
-        }
-        .member-dot.part {
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8);
-        }
-        .member-dot.group-member {
-            border: 2px solid #facc15 !important;
         }
         .dot-label {
             position: absolute;
@@ -216,12 +222,12 @@
             pointer-events: none;
             z-index: 3;
         }
-        /* 選択中の点の下に表示するリアルタイム座標バッジ */
+        
         .coordinate-badge {
             position: absolute;
             font-size: 9px;
             color: #fff;
-            background: #1e3a8a;
+            background: rgba(30, 58, 138, 0.85);
             border: 1px solid #93c5fd;
             padding: 1px 3px;
             border-radius: 3px;
@@ -230,243 +236,115 @@
             pointer-events: none;
             font-family: monospace;
             z-index: 4;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            display: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
         .coordinate-badge.active-badge {
-            display: block;
-        }
-        .sub-dot {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-        .sub-dot.active {
-            border: 1px solid white !important;
-            width: 8px;
-            height: 8px;
-        }
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-            align-items: center;
-        }
-        button {
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
+            background: #ef4444 !important;
+            border-color: #fca5a5 !important;
             font-weight: bold;
+            z-index: 11;
         }
+        
+        .sub-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, -50%); border: 1px solid #fff; }
+        .sub-dot.active-subdot { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.9) !important; border: 1px solid #ef4444 !important; z-index: 10; width: 8px; height: 8px; }
+        
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; align-items: center; }
+        button { background-color: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #1d4ed8; }
         button.secondary { background-color: #64748b; }
         button.secondary:hover { background-color: #475569; }
-        button.play-active { background-color: #dc2626; }
-        button.play-active:hover { background-color: #b91c1c; }
         button.danger { background-color: #ef4444; }
         button.danger:hover { background-color: #b91c1c; }
+        button.success { background-color: #10b981; }
+        button.success:hover { background-color: #059669; }
         
-        select, input {
-            padding: 8px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-        }
-        .status-display {
-            display: flex;
-            justify-content: start;
-            align-items: center;
-            background: #f1f5f9;
-            padding: 10px 15px;
-            border-radius: 6px;
-            font-weight: bold;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            gap: 20px;
-        }
-        .status-display > div {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .info-panel {
-            background: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 0 6px 6px 0;
-        }
-        .note-box {
-            background: #fff9db;
-            border-left: 4px solid #fab005;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
+        select, input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        header select, header input { padding: 6px; border: 1px solid #94a3b8; background: white; color: #333; }
+        
+        .status-display { display: flex; justify-content: start; align-items: center; background: #f1f5f9; padding: 10px 15px; border-radius: 6px; font-weight: bold; margin-top: 10px; margin-bottom: 10px; gap: 20px; }
+        .status-display > div { display: flex; align-items: center; gap: 5px; }
+        .note-box { background: #fff9db; border-left: 4px solid #fab005; padding: 12px; margin-top: 5px; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; }
         .mode-section { display: none; }
         .mode-section.active-section { display: block; }
-        .edit-indicator {
-            background-color: #f43f5e;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-        .highlight-banner {
-            background: #fef2f2;
-            border: 1px dashed #fca5a5;
-            padding: 10px;
-            border-radius: 6px;
-        }
+        .edit-indicator { background-color: #f43f5e; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8em; display: inline-block; margin-bottom: 10px; }
         
-        .timeline-container {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #cbd5e1;
-            padding: 10px;
-            border-radius: 6px;
-            background: #f8fafc;
-        }
-        .timeline-row {
-            display: grid;
-            grid-template-columns: 65px 65px 1fr;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e2e8f0;
-            cursor: pointer;
-        }
-        .timeline-row.selected-row {
-            background-color: #ffe3e3;
-        }
-        .timeline-row span {
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-        .formation-overlay-guide {
-            display: none;
-            background-color: #fff3bf;
-            border: 3px solid #fab005;
-            padding: 12px 18px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 1.05em;
-            font-weight: bold;
-            color: #856404;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .color-palette {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-            margin-top: 5px;
-        }
-        .color-chip {
-            width: 22px;
-            height: 22px;
-            border-radius: 4px;
-            border: 1px solid #94a3b8;
-            cursor: pointer;
-        }
-        .color-chip.selected {
-            border: 2px solid #000;
-            box-shadow: 0 0 4px rgba(0,0,0,0.4);
-        }
-        .sidebar-edit-only {
-            display: none;
-        }
-        .visual-color-indicator {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 0 4px rgba(0,0,0,0.3);
-            display: inline-block;
-            vertical-align: middle;
-        }
+        .formation-overlay-guide { display: none; background-color: #fff3bf; border: 3px solid #fab005; padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; font-size: 1.05em; font-weight: bold; color: #856404; position: relative; }
+        .formation-cancel-btn { position: absolute; right: 10px; top: 10px; background: #ef4444; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 0.8em; }
+
+        .color-palette { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+        .color-chip { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #94a3b8; cursor: pointer; position: relative; }
+        .color-chip.selected-chip::after { content: "✓"; position: absolute; color: white; font-weight: bold; font-size: 12px; left: 5px; top: 0; text-shadow: 0 0 2px black; }
         
-        /* 自分の動き確認ボックスの高さ指定：指示通り決まった高さ(250px)でスクロールするタイプへ統一 */
-        .personal-timeline-box {
-            overflow-y: auto;
-            border: 1px solid #cbd5e1;
-            padding: 8px;
-            border-radius: 6px;
-            background: #fafafa;
-            max-height: 250px; 
+        .sidebar-edit-only { display: none; }
+        .visual-color-indicator { width: 18px; height: 18px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3); display: inline-block; vertical-align: middle; }
+        
+        /* 🏃 自分の動き確認タイムラインボックス */
+        .personal-timeline-box { overflow-y: auto; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; background: #fafafa; box-sizing: border-box; }
+        .personal-timeline-box.view-mode { height: 380px; }
+        .personal-timeline-box.edit-mode { height: 180px; }
+        .personal-timeline-box.fullscreen-mode { height: calc(100vh - 220px); } 
+
+        .personal-beat-row { display: grid; grid-template-columns: 85px 140px 1fr; gap: 8px; align-items: center; padding: 6px 4px; border-bottom: 1px solid #e2e8f0; font-size: 0.85em; cursor: pointer; }
+        .personal-beat-row.active-beat { background-color: #e0f2fe; font-weight: bold; border-left: 4px solid #0284c7; }
+        .personal-beat-row span.beat-label { font-weight: bold; color: #475569; }
+        .personal-beat-row .pos-text { color: #059669; font-family: monospace; }
+        .target-member-badge { background-color: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; margin-bottom: 8px; display: inline-block; border: 1px solid #bae6fd; }
+        
+        .edit-panel-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 750px) { .edit-panel-layout { grid-template-columns: 1fr; } }
+        .edit-block { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; margin-bottom: 10px; }
+        .edit-block-title { font-weight: bold; color: #1e3a8a; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; font-size: 0.95em; }
+
+        .member-checkbox-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 100px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; padding: 6px; border-radius: 4px; margin-top: 5px; }
+        .member-checkbox-list label { font-size: 0.8em; display: flex; align-items: center; gap: 3px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+
+        /* ⏱️ 全体タイムライン編集 */
+        .timeline-container { max-height: 220px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: white; padding: 5px; margin-top: 10px; }
+        .timeline-row { display: flex; align-items: center; gap: 6px; padding: 4px; border-bottom: 1px solid #f1f5f9; font-size: 0.85em; cursor: pointer; }
+        .timeline-row:hover { background-color: #f8fafc; }
+        .timeline-row.selected-row { background-color: #fef2f2; border-left: 4px solid #ef4444; font-weight: bold; }
+        .timeline-row span { min-width: 75px; color: #475569; font-family: monospace; }
+
+        /* 🖥️ 全画面表示モード用スタイル */
+        body.fullscreen-active header,
+        body.fullscreen-active .mode-tabs,
+        body.fullscreen-active .card:not(#main-field-card):not(#personal-movement-card),
+        body.fullscreen-active #section-edit {
+            display: none !important;
+        }
+        body.fullscreen-active .main-wrapper {
+            max-width: 100vw;
+            margin: 0;
+            padding: 15px;
+            grid-template-columns: 1.5fr 1fr !important;
+            height: 96vh;
+            box-sizing: border-box;
+        }
+        body.fullscreen-active .left-column {
+            justify-content: center;
+        }
+        body.fullscreen-active .right-column {
+            justify-content: flex-start;
         }
 
-        .personal-beat-row {
-            display: grid;
-            grid-template-columns: 65px 140px 1fr;
-            gap: 8px;
-            align-items: center;
-            padding: 6px 4px;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 0.85em;
-            cursor: pointer;
-        }
-        .personal-beat-row.active-beat {
-            background-color: #e0f2fe;
-            font-weight: bold;
-            border-left: 4px solid #0284c7;
-        }
-        .personal-beat-row span.beat-label {
-            font-weight: bold;
-            color: #475569;
-        }
-        .personal-beat-row .pos-text {
-            color: #059669;
-            font-family: monospace;
-        }
-        .target-member-badge {
-            background-color: #e0f2fe;
-            color: #0369a1;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            font-weight: bold;
-            margin-bottom: 8px;
-            display: inline-block;
-            border: 1px solid #bae6fd;
-        }
-
-        .group-manager-box {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 8px;
-        }
-        .member-checkbox-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            max-height: 90px;
-            overflow-y: auto;
-            background: white;
-            border: 1px solid #cbd5e1;
-            padding: 6px;
-            border-radius: 4px;
-            margin-top: 5px;
-        }
-        .member-checkbox-list label {
-            font-size: 0.8em;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            background: #f1f5f9;
-            padding: 2px 6px;
-            border-radius: 4px;
-            cursor: pointer;
+        /* 📄 印刷用 */
+        @media print {
+            body { background: white; color: black; font-size: 11pt; }
+            header, .mode-tabs, .main-wrapper { display: none !important; }
+            #print-pdf-area { display: block !important; width: 100%; padding: 0; margin: 0; }
+            .pdf-page-header { text-align: center; border-bottom: 3px double #000; padding-bottom: 6px; margin-bottom: 15px; }
+            .pdf-set-row { display: flex; width: 100%; height: 47vh; box-sizing: border-box; border-bottom: 2px dashed #94a3b8; padding: 15px 0; page-break-inside: avoid; }
+            .pdf-set-row:nth-child(even) { page-break-after: always; border-bottom: none; }
+            .pdf-left-map { width: 50%; padding-right: 15px; box-sizing: border-box; display: flex; flex-direction: column; }
+            .pdf-map-title { font-size: 13pt; font-weight: bold; color: #1e3a8a; margin-bottom: 6px; }
+            .pdf-left-map .sub-field-container { width: 100% !important; aspect-ratio: 2 / 1 !important; background-color: #15803d !important; border: 2px solid #000 !important; position: relative; }
+            .pdf-dot-coord-text { position: absolute; font-size: 7px; font-family: monospace; color: #fff; background: rgba(0, 0, 0, 0.75); padding: 1px 2px; border-radius: 2px; transform: translate(-50%, 6px); white-space: nowrap; z-index: 5; }
+            .pdf-right-info { width: 50%; padding-left: 15px; box-sizing: border-box; border-left: 2px solid #cbd5e1; display: flex; flex-direction: column; overflow: hidden; }
+            .pdf-beat-list-title { font-size: 11pt; font-weight: bold; margin-bottom: 6px; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 2px; }
+            .pdf-beat-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+            .pdf-beat-table th, .pdf-beat-table td { border: 1px solid #cbd5e1; padding: 4px 6px; text-align: left; }
+            .pdf-beat-table th { background-color: #f1f5f9; font-weight: bold; }
+            .pdf-beat-table .beat-highlight { background-color: #f0f9ff; font-weight: bold; }
         }
     </style>
 </head>
@@ -474,6 +352,25 @@
 
 <header>
     <h1>マーチング・ドリル・シミュレーター</h1>
+    <div class="header-controls">
+        <div class="control-group-box">
+            <input type="text" id="input-save-name" placeholder="保存名を入力" style="width: 120px;">
+            <button onclick="saveCurrentDrillSlot()" class="success" style="background-color: #22c55e; padding: 6px 12px; font-size:0.85em;">📁 保存</button>
+            <select id="select-drill-slots" style="max-width: 130px; padding: 5px; font-size:0.85em;"></select>
+            <button onclick="loadSelectedDrillSlot()" class="secondary" style="background-color: #3b82f6; padding: 6px 12px; font-size:0.85em;">📂 開く</button>
+            <button onclick="deleteSelectedDrillSlot()" class="danger" style="padding: 6px 10px; font-size:0.85em;">🗑️</button>
+        </div>
+        
+        <div class="control-group-box group-data-io">
+            <button onclick="exportDrillAsJSON()" class="success" style="background-color: #0d9488; padding: 6px 10px; font-size:0.85em;" title="JSONをPCへ保存">📥 PCへDL</button>
+            <button onclick="document.getElementById('upload-json-file').click()" class="secondary" style="background-color: #6366f1; padding: 6px 10px; font-size:0.85em;" title="JSONファイル読み込み">📤 読込</button>
+            <input type="file" id="upload-json-file" accept=".json" style="display: none;" onchange="importDrillFromJSON(this)">
+        </div>
+
+        <div class="control-group-box group-pdf-export">
+            <button onclick="openPrintPDFWindow()" class="success" style="background-color: #e11d48; padding: 6px 12px; font-size:0.85em;">📄 PDF・指示書印刷</button>
+        </div>
+    </div>
 </header>
 
 <div class="mode-tabs">
@@ -481,26 +378,26 @@
     <button class="tab-btn" id="tab-edit" onclick="switchMode('edit')">🛠️ 編集用モード (指導者向)</button>
 </div>
 
-<div class="main-wrapper">
+<div class="main-wrapper view-layout" id="main-layout-wrapper">
+    
     <div class="left-column">
-        
         <div id="top-view-panel" class="card">
             <h2>👤 メンバー向け確認パネル (マイポジション選択)</h2>
-            <div class="controls" style="margin-top: 10px;">
+            <div class="controls">
                 <label for="select-member" style="font-weight: bold;">マイポジションを選択:</label>
                 <select id="select-member" onchange="selectedMemberId=parseInt(this.value); updateHighlight();" style="font-size:1.05em; padding:6px;"></select>
                 <div id="member-visual-color" class="visual-color-indicator"></div>
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="main-field-card">
             <h2>メインフィールド</h2>
+            <div id="edit-notice" class="edit-indicator" style="display:none;">🛠️ 編集モード</div>
             
-            <div id="edit-notice" class="edit-indicator" style="display:none;">
-                🛠️ 編集モード：点を選んでドラッグ、または一括配置ツールが使用できます
+            <div id="formation-guide" class="formation-overlay-guide">
+                <span id="formation-guide-text">ガイドテキスト</span>
+                <button class="formation-cancel-btn" onclick="cancelFormation()">キャンセル</button>
             </div>
-
-            <div id="formation-guide" class="formation-overlay-guide"></div>
 
             <div class="field-container" id="field"></div>
 
@@ -514,26 +411,24 @@
 
             <div class="status-display">
                 <div>
-                    <label for="select-jump-set">セット情報:</label>
-                    <select id="select-jump-set" onchange="jumpToSetAndBeat()" style="padding:4px; font-weight:bold;"></select>
+                    <label for="select-jump-set">セット:</label>
+                    <select id="select-jump-set" onchange="jumpToSetAndBeat()"></select>
                 </div>
                 <div>
-                    <label for="input-jump-beat">拍情報:</label>
-                    <input type="number" id="input-jump-beat" value="0" min="0" oninput="jumpToSetAndBeat()" style="width:50px; padding:4px; text-align:center; font-weight:bold;">
-                    <span>/ <span id="disp-max-count">16</span></span>
+                    <label>位置 (セット-小節-拍):</label>
+                    <span id="disp-current-position" style="font-family: monospace; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">0-1-1</span>
+                    <span>/ 全 <span id="disp-max-count">16</span> 拍</span>
                 </div>
-                <div>現在BPM: <span id="disp-bpm">120</span> (<span id="disp-metro">4/4拍子</span>)</div>
+                <div>BPM: <span id="disp-bpm">120</span> (<span id="disp-metro">4/4拍子</span>)</div>
             </div>
 
             <div class="note-box" id="note-display">ノート: 読み込み中...</div>
 
             <div class="controls">
-                <button id="btn-toggle-play" style="width: 140px;">▶️ 再生</button>
-                <button id="btn-undo" class="secondary" style="background-color: #8b5cf6;" onclick="undo()">↩️ 戻る (Ctrl+Z)</button>
-                <button id="btn-redo" class="secondary" style="background-color: #d946ef;" onclick="redo()">↪️ 進める (Ctrl+Y)</button>
-                
-                <label for="select-speed">速度:</label>
-                <select id="select-speed">
+                <button id="btn-toggle-play" style="width: 140px;" onclick="togglePlay()">▶️ 再生</button>
+                <button id="btn-undo" class="secondary" onclick="undo()">↩️ 戻る</button>
+                <button id="btn-redo" class="secondary" onclick="redo()">↪️ 進める</button>
+                <select id="select-speed" onchange="if(isPlaying){ togglePlay(); togglePlay(); }">
                     <option value="0.5">0.5倍速</option>
                     <option value="0.75">0.75倍速</option>
                     <option value="1" selected>1.0倍速</option>
@@ -541,900 +436,632 @@
                     <option value="2">2.0倍速</option>
                 </select>
                 <label><input type="checkbox" id="chk-sound" checked> クリック音</label>
-            </div>
-        </div>
-
-        <div id="section-view" class="mode-section active-section">
-            <div class="card">
-                <h2>📐 現在位置の歩数ガイド</h2>
-                <div class="info-panel" id="position-info"></div>
+                
+                <button onclick="toggleFullscreenView()" style="background-color: #0f172a; margin-left: auto;">🖥️ 全画面表示切替</button>
             </div>
         </div>
 
         <div id="section-edit" class="mode-section">
             <div class="card">
                 <h2>🛠️ ドリルデータ編集パネル</h2>
-                
-                <div style="background:#f8fafc; padding:15px; border-radius:6px; border:1px solid #e2e8f0; display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div class="edit-panel-layout">
                     <div>
-                        <strong>1. 編集するセットを選択:</strong>
-                        <div style="margin-top:8px; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-                            <button onclick="addNewSet()" style="background-color:#1e3a8a; font-size:0.85em; padding:6px;">＋ 下にセットを追加</button>
-                            <button onclick="removeLastSet()" class="danger" style="font-size:0.85em; padding:6px;">選択中のセットを削除</button>
-                        </div>
-                        
-                        <div id="set-buttons-container" class="controls" style="margin-top:10px; flex-direction:column; align-items:stretch;"></div>
-                    </div>
-                    
-                    <div style="display:flex; flex-direction:column; gap:10px;">
-                        <div class="highlight-banner" id="edit-picked-info">
-                            <strong>選択中のメンバー情報:</strong><br>
-                            <span id="picked-member-name" style="color:#ef4444; font-weight:bold;">なし</span>
-                            
-                            <div id="picked-member-edit-fields" style="margin-top:8px; display:none; font-size:0.85em;">
-                                <label style="display:block; margin-bottom:4px;">
-                                    パートを変更: <input type="text" id="edit-member-part" oninput="changeMemberPart(this.value)" style="padding:4px; width:120px;">
-                                </label>
-                                <div style="margin-top:6px;">色の変更:</div>
-                                <div class="color-palette" id="edit-member-color-palette"></div>
+                        <div class="edit-block">
+                            <div class="edit-block-title">1. セット編集</div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:8px;">
+                                <button onclick="addNewSet()" style="background-color:#1e3a8a; font-size:0.85em; padding:6px;">＋ 下にセット追加</button>
+                                <button onclick="removeLastSet()" class="danger" style="font-size:0.85em; padding:6px;">セット削除</button>
                             </div>
+                            <div id="set-buttons-container" class="controls" style="margin-top:5px; gap:5px;"></div>
                         </div>
 
-                        <div class="group-manager-box">
-                            <strong style="font-size:0.85em; color: #166534;">👥 セット別 一括配置グループ管理</strong>
-                            <div style="margin-top:5px; display:flex; gap:5px;">
-                                <select id="select-edit-group" onchange="onGroupChanged()" style="padding:4px; font-size:0.85em; flex:1;"></select>
-                                <button onclick="createNewGroupForSet()" style="padding:4px 8px; font-size:0.8em; background:#166534;">新規作成</button>
+                        <div class="edit-block">
+                            <div class="edit-block-title">2. メンバー編集</div>
+                            <div style="display: flex; gap: 5px; margin-bottom: 12px;">
+                                <input type="text" id="input-new-member-name" placeholder="例: メンバーE" style="padding: 6px; flex: 1; font-size: 0.85em;">
+                                <button onclick="addNewMemberDirect()" class="success" style="font-size:0.85em; padding:6px 12px; white-space: nowrap;">＋追加</button>
                             </div>
-                            <div style="font-size:0.75em; font-weight:bold; margin-top:5px; color:#475569;">グループに所属させるメンバーを選択:</div>
-                            <div class="member-checkbox-list" id="group-member-checkboxes"></div>
                             
-                            <div style="background:#fff; border:1px solid #bbf7d0; padding:6px; border-radius:4px; margin-top:8px;">
-                                <strong style="font-size:0.85em; display:block; color:#1e3a8a;">📐 このグループを並べる</strong>
-                                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-top:4px;">
-                                    <button class="secondary" style="padding:4px; font-size:0.75em;" onclick="startFormation('line')">直線</button>
-                                    <button class="secondary" style="padding:4px; font-size:0.75em;" onclick="startFormation('arc')">V字弧</button>
-                                    <button class="secondary" style="padding:4px; font-size:0.75em;" onclick="startFormation('circle')">円形</button>
+                            <div class="highlight-banner" id="edit-picked-info" style="background: #fdf2f8; border: 1px dashed #fbcfe8; padding:8px; border-radius:4px;">
+                                <strong>選択中:</strong> <span id="picked-member-name" style="color:#ef4444; font-weight:bold;">なし</span>
+                                <div id="picked-member-edit-fields" style="margin-top:6px; display:none; font-size:0.85em;">
+                                    <label>パート名: <input type="text" id="edit-member-part" oninput="changeMemberPart(this.value)" style="padding:4px; width:110px; font-size:0.9em;"></label>
+                                    <div style="margin-top:8px; margin-bottom:4px; font-weight:bold;">メンバーカラー (10色):</div>
+                                    <div class="color-palette" id="edit-member-color-palette"></div>
+                                    <div style="margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 10px; text-align: right;">
+                                        <button onclick="deleteSelectedMemberAction()" class="danger" style="font-size:0.8em; padding:5px 10px;">🗑️ このメンバーを削除する</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                    
+                    <div>
+                        <div class="edit-block" style="background:#f0fdf4; border-color:#bbf7d0; height:100%; box-sizing:border-box;">
+                            <div class="edit-block-title" style="color:#166534; border-color:#bbf7d0;">3. グループ編集</div>
+                            <div style="font-size:0.8em; margin-bottom:4px; font-weight:bold; color:#166534;">■ 全セット共通グループ新規作製:</div>
+                            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                                <input type="text" id="input-new-global-group" placeholder="新グループ名" style="padding:4px; flex:1; font-size:0.85em;">
+                                <button onclick="createGlobalGroupAction()" style="padding:4px 10px; background-color:#4f46e5; font-size:0.85em;">作製</button>
+                            </div>
 
-                <div style="margin-top:15px; border-top:1px solid #e2e8f0; padding-top:15px;">
-                    <strong>2. 👤 メンバーを新規追加:</strong>
-                    <div class="controls">
-                        <input type="text" id="new-member-name" placeholder="例：メンバーE (Sax)">
-                        <input type="text" id="new-member-part" placeholder="例：サックス">
-                        <div style="display:inline-block; vertical-align:middle;">
-                            <span style="font-size:0.85em;">点の色を選択:</span>
-                            <div class="color-palette" id="new-member-color-palette"></div>
+                            <div style="font-size:0.8em; margin-bottom:4px; font-weight:bold; color:#166534;">■ 編集・配置グループ選択:</div>
+                            <div style="display:flex; gap:5px;">
+                                <select id="select-edit-group" onchange="onGroupChanged()" style="padding:4px; flex:1; font-size:0.85em;"></select>
+                                <button onclick="createNewGroupForSet()" style="padding:4px; background:#166534; font-size:0.85em;">セット限定作成</button>
+                            </div>
+
+                            <div class="member-checkbox-list" id="group-member-checkboxes"></div>
+                            
+                            <div style="margin-top:10px; padding-top:8px; border-top:1px dashed #bbf7d0; display:flex; flex-direction:column; gap:6px;">
+                                <div style="font-size:0.85em; font-weight:bold; color:#166534;">📐 選択中のグループを一括整列配置:</div>
+                                <button class="secondary" style="padding:6px; font-size:0.8em; text-align:left; background-color:#166534;" onclick="startFormation('line')">➖ 直線上に等間隔で並べる (起点→終点)</button>
+                                <button class="secondary" style="padding:6px; font-size:0.8em; text-align:left; background-color:#15803d;" onclick="startFormation('arc')">🌙 円弧状に並べる (起点→終点→ふくらみ中心点)</button>
+                                <button class="secondary" style="padding:6px; font-size:0.8em; text-align:left; background-color:#1e3a8a;" onclick="startFormation('circle')">⭕ 正円形に並べる (円の中心点→半径の端点)</button>
+                            </div>
                         </div>
-                        <button onclick="addNewMember()" style="background-color:#10b981; margin-top:5px;">＋ フィールドに追加</button>
-                    </div>
-                </div>
-
-                <div style="margin-top:15px; border-top:1px solid #e2e8f0; padding-top:15px; background: #faf5ff; border-radius:6px; padding:10px; border:1px solid #e9d5ff;">
-                    <strong>3. 🌍 全セット共通グループの作製:</strong>
-                    <div class="controls" style="margin-top:8px;">
-                        <input type="text" id="input-new-global-group-name" placeholder="例：木管部隊、バッテリー" style="flex:1;">
-                        <button onclick="createNewGlobalGroup()" style="background-color:#8b5cf6;">共通グループ作成</button>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="right-column" id="right-column-container">
+        <div class="card" id="side-subfields-card">
+            <h2>👁️ 各セットの全体像</h2>
+            <div class="side-subfields-scroll view-mode" id="side-subfields-container"></div>
         </div>
 
         <div class="card" id="personal-movement-card">
             <h2 id="personal-timeline-title">🏃 自分の動き確認</h2>
             <div id="target-member-display-badge" class="target-member-badge">🎯 対象: 未選択</div>
-            <div id="personal-timeline" class="personal-timeline-box"></div>
-        </div>
-
-    </div>
-
-    <div class="right-column">
-        <div class="card">
-            <h2>👁️ 各セットの全体像</h2>
-            <div class="side-subfields-scroll view-mode" id="side-subfields-container"></div>
+            <div id="personal-timeline" class="personal-timeline-box view-mode"></div>
         </div>
 
         <div class="card sidebar-edit-only" id="sidebar-timeline-card">
-            <h2>⏱️ 全体タイムライン編集</h2>
-            <div style="display:grid; gap:10px; font-size:0.9em; margin-bottom:15px;">
-                <label>基本拍子: 
-                    <select id="input-meter" onchange="document.getElementById('disp-metro').innerText = this.value + '/4拍子';">
-                        <option value="4">4/4 拍子</option>
-                        <option value="3">3/4 拍子</option>
+            <h2>⏱️ タイムライン設定 & 変則編集</h2>
+            
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 12px;">
+                <div style="font-weight:bold; font-size:0.85em; margin-bottom:6px; color:#1e3a8a;">⚙️ 基本拍子設定</div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <label for="input-meter" style="font-size:0.85em;">1小節あたりの拍数:</label>
+                    <select id="input-meter" onchange="document.getElementById('disp-metro').innerText = this.value + '/4拍子'; rebuildTimelineStructure(); saveStorage();">
+                        <option value="4" selected>4 拍子 (4/4)</option>
+                        <option value="3">3 拍子 (3/4)</option>
+                        <option value="2">2 拍子 (2/4)</option>
                     </select>
-                </label>
-                <div style="background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid #cbd5e1; display:grid; gap:5px;">
-                    <div style="display:flex; align-items:center; gap:4px;">
-                        <button onclick="addCountsTimeline()" style="background-color:#1e3a8a; font-size:0.8em; padding:4px 8px;">＋ 下に</button>
-                        <input type="number" id="input-add-count-num" value="4" min="1" style="width:45px; padding:2px; text-align:center;">
-                        <span style="font-size:0.85em; font-weight:bold;">拍追加</span>
-                    </div>
-                    <button onclick="removeSelectedTimelineCount()" class="danger" style="font-size:0.8em; padding:4px 8px;">選択中の拍を削除</button>
                 </div>
             </div>
+
+            <div style="background: #fff5f5; border: 1px solid #fed7d7; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                <div style="font-weight:bold; font-size:0.85em; margin-bottom:6px; color:#c53030;">⚠️ タイムライン変則編集ツール</div>
+                <div style="font-size:0.75em; color:#742a2a; margin-bottom:8px;">現在選択している「拍行」に対してピンポイントで実行します</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                    <button onclick="insertCustomBeatAtSelected()" class="success" style="font-size:0.75em; padding:5px;">＋ 選択位置に「1拍」挿入</button>
+                    <button onclick="insertCustomMeasureAtSelected()" class="success" style="font-size:0.75em; padding:5px; background-color:#4f46e5;">＋ 新小節をまるごと挿入</button>
+                </div>
+                <button onclick="deleteCustomBeatAtSelected()" class="danger" style="font-size:0.75em; padding:5px; width:100%; margin-top:5px;">🗑️ 選択されているこの1拍を完全削除</button>
+            </div>
+
             <div class="timeline-container" id="timeline-container"></div>
         </div>
     </div>
 </div>
+
+<div id="print-pdf-area"></div>
 
 <script>
     const STEP_METER = 0.625; 
     let currentMode = 'view'; 
     let editingSet = 1;       
     let selectedMemberId = 0; 
+    let currentCount = 0;
     
+    let isPlaying = false;
+    let animationFrameId = null;
+    let lastAnimTime = 0;
+    let lastPlayedCount = -1;
+
+    // 小節・拍を厳密にマッピングするための配列。各要素が { set: 1, measure: 1, beat: 1 } の情報を持つ
+    let beatStructure = [];
+
     let setEndCounts = [0, 0, 8, 16]; 
     let totalSetsCount = 3; 
-
-    let undoStack = [];
-    let redoStack = [];
-
-    const GLOBAL_GROUPS = {
-        "全体一括": [0, 1, 2, 3],
-        "グループ1": [0, 1],
-        "グループ2": [2, 3]
-    };
-
+    let GLOBAL_GROUPS = { "全体一括": [0, 1, 2, 3] };
     let setGroups = { 1: {}, 2: {}, 3: {} };
-    let currentSelectedGroupName = "全体一括";
-
-    function getSetName(index) {
-        if (index === 1) return "0";
-        return String.fromCharCode(65 + (index - 2)); 
-    }
-
-    function getSetAndBeatString(count) {
-        let maxC = getMaxCount();
-        if (count >= maxC) {
-            let lastSetStart = setEndCounts[totalSetsCount];
-            return `${getSetName(totalSetsCount)}-${count - lastSetStart}`;
-        }
-        for (let i = 1; i <= totalSetsCount; i++) {
-            if (count >= setEndCounts[i] && count < setEndCounts[i + 1]) {
-                return `${getSetName(i)}-${count - setEndCounts[i]}`;
-            }
-        }
-        return `0-0`;
-    }
-
-    const PRESET_COLORS = [
-        { name: "オレンジ", hex: "#f59e0b" },
-        { name: "ブルー", hex: "#3b82f6" },
-        { name: "グリーン", hex: "#10b981" },
-        { name: "ピンク", hex: "#ec4899" },
-        { name: "レッド", hex: "#ef4444" },
-        { name: "パープル", hex: "#a855f7" },
-        { name: "シアン", hex: "#06b6d4" },
-        { name: "ライム", hex: "#84cc16" },
-        { name: "イエロー", hex: "#eab308" },
-        { name: "グレー", hex: "#64748b" }
-    ];
-    let selectedNewMemberColor = PRESET_COLORS[0].hex;
-
     let members = [
-        { id: 0, name: "メンバーA (TB)", part: "ブラス", color: "#f59e0b", positions: { 1: {x:20, y:30}, 2: {x:30, y:50}, 3: {x:20, y:70} }, personalNotes: { 0: "姿勢キープ", 4: "ベルアップ高め" } },
+        { id: 0, name: "メンバーA (TB)", part: "ブラス", color: "#ef4444", positions: { 1: {x:20, y:30}, 2: {x:30, y:50}, 3: {x:20, y:70} }, personalNotes: {} },
         { id: 1, name: "メンバーB (TB)", part: "ブラス", color: "#3b82f6", positions: { 1: {x:40, y:30}, 2: {x:45, y:65}, 3: {x:40, y:70} }, personalNotes: {} },
         { id: 2, name: "メンバーC (TRP)", part: "トランペット", color: "#10b981", positions: { 1: {x:60, y:30}, 2: {x:55, y:65}, 3: {x:60, y:70} }, personalNotes: {} },
-        { id: 3, name: "メンバーD (TRP)", part: "トランペット", color: "#ec4899", positions: { 1: {x:80, y:30}, 2: {x:70, y:50}, 3: {x:80, y:70} }, personalNotes: {} }
+        { id: 3, name: "メンバーD (TRP)", part: "トランペット", color: "#f59e0b", positions: { 1: {x:80, y:30}, 2: {x:70, y:50}, 3: {x:80, y:70} }, personalNotes: {} }
+    ];
+    let notes = { 0: "開始ポジション", 8: "セットAへ移動完了" };
+    let countTempos = { 0: 120 };
+
+    const STORAGE_KEY = 'marching_drill_data_v4';
+    const SLOTS_INDEX_KEY = 'marching_drill_slots_list_v4';
+
+    const PRESET_COLORS = [
+        { name: "赤", hex: "#ef4444" }, { name: "青", hex: "#3b82f6" }, 
+        { name: "緑", hex: "#10b981" }, { name: "橙", hex: "#f59e0b" }, 
+        { name: "桃", hex: "#ec4899" }, { name: "紫", hex: "#8b5cf6" }, 
+        { name: "水色", hex: "#06b6d4" }, { name: "黄緑", hex: "#84cc16" }, 
+        { name: "茶色", hex: "#78350f" }, { name: "黒", hex: "#1e293b" }
     ];
 
-    let notes = {
-        0: "セット0：カウント開始。",
-        4: "4カウント目：ここから移動開始！",
-        8: "セットA：移動完了。",
-        12: "12カウント目：次のマークへ意識"
-    };
-
-    let countTempos = { 0: 120, 8: 144 };
-    let currentCount = 0;
-    let isPlaying = false;
-    let timer = null;
     let activeTool = null; 
-    let toolStep = 0;      
+    let toolStep = 0; 
     let toolPoints = [];   
 
-    function saveHistory() {
-        undoStack.push(JSON.stringify({
-            members: members, setGroups: setGroups, notes: notes, countTempos: countTempos, setEndCounts: setEndCounts, totalSetsCount: totalSetsCount
-        }));
-        if (undoStack.length > 40) undoStack.shift();
-        redoStack = []; 
+    function saveStorage() {
+        const payload = { setEndCounts, totalSetsCount, GLOBAL_GROUPS, setGroups, members, notes, countTempos, meter: document.getElementById('input-meter').value, beatStructure };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     }
 
-    function undo() {
-        if (undoStack.length === 0) return;
-        redoStack.push(JSON.stringify({
-            members: members, setGroups: setGroups, notes: notes, countTempos: countTempos, setEndCounts: setEndCounts, totalSetsCount: totalSetsCount
-        }));
-        let raw = JSON.parse(undoStack.pop());
-        members = raw.members; setGroups = raw.setGroups; notes = raw.notes; countTempos = raw.countTempos; setEndCounts = raw.setEndCounts; totalSetsCount = raw.totalSetsCount;
-        refreshAllUI();
+    function loadStorage() {
+        const raw = localStorage.getItem(STORAGE_KEY); if (!raw) { rebuildTimelineStructure(); return; }
+        try {
+            const data = JSON.parse(raw);
+            if (data.setEndCounts) setEndCounts = data.setEndCounts;
+            if (data.totalSetsCount) totalSetsCount = data.totalSetsCount;
+            if (data.GLOBAL_GROUPS) GLOBAL_GROUPS = data.GLOBAL_GROUPS;
+            if (data.setGroups) setGroups = data.setGroups;
+            if (data.members) members = data.members;
+            if (data.notes) notes = data.notes;
+            if (data.countTempos) countTempos = data.countTempos;
+            if (data.meter) { document.getElementById('input-meter').value = data.meter; document.getElementById('disp-metro').innerText = data.meter + '/4拍子'; }
+            if (data.beatStructure) { beatStructure = data.beatStructure; } else { rebuildTimelineStructure(); }
+        } catch(e) { console.error(e); rebuildTimelineStructure(); }
     }
 
-    function redo() {
-        if (redoStack.length === 0) return;
-        undoStack.push(JSON.stringify({
-            members: members, setGroups: setGroups, notes: notes, countTempos: countTempos, setEndCounts: setEndCounts, totalSetsCount: totalSetsCount
-        }));
-        let raw = JSON.parse(redoStack.pop());
-        members = raw.members; setGroups = raw.setGroups; notes = raw.notes; countTempos = raw.countTempos; setEndCounts = raw.setEndCounts; totalSetsCount = raw.totalSetsCount;
-        refreshAllUI();
-    }
+    /* 🧭 拍構造（小節・拍数）を自動的に再構築する関数 */
+    function rebuildTimelineStructure() {
+        const baseMeter = parseInt(document.getElementById('input-meter').value) || 4;
+        beatStructure = [];
+        let totalCount = setEndCounts[totalSetsCount] || 16;
+        
+        let currentSet = 1;
+        let currentMeasure = 1;
+        let currentBeat = 1;
 
-    function refreshAllUI() {
-        renderSetButtons();
-        updateJumpSetSelector();
-        initMembers();
-        buildSubFields();
-        buildTimelineUI();
-        buildVideoTimelineTicks();
-        updateGroupUI();
-        updateFrame();
-    }
+        for (let i = 0; i <= totalCount; i++) {
+            // セットの切り替わりチェック
+            for (let s = 1; s <= totalSetsCount; s++) {
+                if (i === setEndCounts[s]) {
+                    currentSet = s;
+                    currentMeasure = 1;
+                    currentBeat = 1;
+                }
+            }
+            
+            beatStructure.push({
+                set: currentSet,
+                measure: currentMeasure,
+                beat: currentBeat
+            });
 
-    window.addEventListener('keydown', (e) => {
-        if (document.activeElement.tagName === 'INPUT' && document.activeElement.type === 'text') return;
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
-    });
-
-    function getMaxCount() { return setEndCounts[totalSetsCount]; }
-
-    function getSegmentDetails(count) {
-        let maxC = getMaxCount();
-        if(count >= maxC) {
-            return { currentIdx: totalSetsCount - 1, nextIdx: totalSetsCount, ratio: 1.0 };
-        }
-        for(let i = 1; i <= totalSetsCount; i++) {
-            if(count >= setEndCounts[i] && count < setEndCounts[i+1]) {
-                let segLength = setEndCounts[i+1] - setEndCounts[i];
-                let ratio = (count - setEndCounts[i]) / segLength;
-                return { currentIdx: i, nextIdx: i + 1, ratio: ratio };
+            currentBeat++;
+            if (currentBeat > baseMeter) {
+                currentBeat = 1;
+                currentMeasure++;
             }
         }
+    }
+
+    function exportDrillAsJSON() {
+        const payload = { setEndCounts, totalSetsCount, GLOBAL_GROUPS, setGroups, members, notes, countTempos, meter: document.getElementById('input-meter').value, beatStructure };
+        const jsonString = JSON.stringify(payload, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        let name = document.getElementById('input-save-name').value.trim() || "marching_drill_data";
+        a.href = url; a.download = `${name}.json`; a.click(); URL.revokeObjectURL(url);
+    }
+
+    function importDrillFromJSON(inputEl) {
+        const file = inputEl.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (!data.members || !data.setEndCounts) return alert("正しい形式のドリルファイルではありません。");
+                if (!confirm("現在のデータを上書きしてJSONを読み込みますか？")) return;
+                setEndCounts = data.setEndCounts; totalSetsCount = data.totalSetsCount; GLOBAL_GROUPS = data.GLOBAL_GROUPS || { "全体一括": [] }; setGroups = data.setGroups || {}; members = data.members; notes = data.notes || {}; countTempos = data.countTempos || { 0: 120 };
+                if (data.meter) { document.getElementById('input-meter').value = data.meter; document.getElementById('disp-metro').innerText = data.meter + '/4拍子'; }
+                if (data.beatStructure) beatStructure = data.beatStructure; else rebuildTimelineStructure();
+                if (members.length > 0) selectedMemberId = members[0].id;
+                saveStorage(); currentCount = 0; refreshAllUI(); alert("読み込みに成功しました！");
+            } catch (err) { alert("ファイルの読み込みに失敗しました。"); }
+        };
+        reader.readAsText(file); inputEl.value = '';
+    }
+
+    function getSavedSlots() { let raw = localStorage.getItem(SLOTS_INDEX_KEY); return raw ? JSON.parse(raw) : []; }
+    function updateSlotsSelectorUI() {
+        let slots = getSavedSlots(); let select = document.getElementById('select-drill-slots'); select.innerHTML = '';
+        if(slots.length === 0) { let opt = document.createElement('option'); opt.value = ""; opt.innerText = "保存データなし"; select.appendChild(opt); return; }
+        slots.forEach(name => { let opt = document.createElement('option'); opt.value = name; opt.innerText = name; select.appendChild(opt); });
+    }
+
+    function saveCurrentDrillSlot() {
+        let nameInput = document.getElementById('input-save-name'); let slotName = nameInput.value.trim(); if(!slotName) return alert("名前を入力してください。");
+        let slots = getSavedSlots(); if(slots.includes(slotName)) { if(!confirm("上書きしますか？")) return; } else { slots.push(slotName); localStorage.setItem(SLOTS_INDEX_KEY, JSON.stringify(slots)); }
+        const payload = { setEndCounts, totalSetsCount, GLOBAL_GROUPS, setGroups, members, notes, countTempos, meter: document.getElementById('input-meter').value, beatStructure };
+        localStorage.setItem('marching_slot_' + slotName, JSON.stringify(payload)); alert("保存しました！"); nameInput.value = ''; updateSlotsSelectorUI();
+    }
+
+    function loadSelectedDrillSlot() {
+        let slotName = document.getElementById('select-drill-slots').value; if(!slotName) return;
+        let raw = localStorage.getItem('marching_slot_' + slotName); if(!raw) return;
+        if(!confirm("読み込みますか？")) return;
+        try {
+            const data = JSON.parse(raw); setEndCounts = data.setEndCounts; totalSetsCount = data.totalSetsCount; GLOBAL_GROUPS = data.GLOBAL_GROUPS; setGroups = data.setGroups; members = data.members; notes = data.notes; countTempos = data.countTempos;
+            if (data.meter) { document.getElementById('input-meter').value = data.meter; document.getElementById('disp-metro').innerText = data.meter + '/4拍子'; }
+            if (data.beatStructure) beatStructure = data.beatStructure; else rebuildTimelineStructure();
+            if (members.length > 0) selectedMemberId = members[0].id;
+            saveStorage(); currentCount = 0; refreshAllUI();
+        } catch(e) { alert("ロード失敗しました"); }
+    }
+
+    function deleteSelectedDrillSlot() {
+        let slotName = document.getElementById('select-drill-slots').value; if(!slotName || !confirm("削除しますか？")) return;
+        localStorage.removeItem('marching_slot_' + slotName);
+        let slots = getSavedSlots().filter(n => n !== slotName); localStorage.setItem(SLOTS_INDEX_KEY, JSON.stringify(slots)); updateSlotsSelectorUI();
+    }
+
+    let undoStack = []; let redoStack = []; let currentSelectedGroupName = "全体一括";
+    function getSetName(index) { if (index === 1) return "0"; return String.fromCharCode(65 + (index - 2)); }
+    
+    /* 🎵 3階層「セット-小節-拍」文字列を書き出すロジック */
+    function getSetAndBeatString(count) {
+        let idx = Math.floor(count);
+        if (idx >= beatStructure.length) idx = beatStructure.length - 1;
+        if (idx < 0) return "0-1-1";
+        
+        let b = beatStructure[idx];
+        if (!b) return "0-1-1";
+        return `${getSetName(b.set)}-${b.measure}-${b.beat}`;
+    }
+
+    function saveHistory() { undoStack.push(JSON.stringify({ members, setGroups, notes, countTempos, setEndCounts, totalSetsCount, GLOBAL_GROUPS, beatStructure })); if (undoStack.length > 40) undoStack.shift(); redoStack = []; saveStorage(); }
+    function undo() { if (undoStack.length === 0) return; redoStack.push(JSON.stringify({ members, setGroups, notes, countTempos, setEndCounts, totalSetsCount, GLOBAL_GROUPS, beatStructure })); let raw = JSON.parse(undoStack.pop()); members = raw.members; setGroups = raw.setGroups; notes = raw.notes; countTempos = raw.countTempos; setEndCounts = raw.setEndCounts; totalSetsCount = raw.totalSetsCount; GLOBAL_GROUPS = raw.GLOBAL_GROUPS || { "全体一括": [] }; beatStructure = raw.beatStructure || []; saveStorage(); refreshAllUI(); }
+    function redo() { if (redoStack.length === 0) return; undoStack.push(JSON.stringify({ members, setGroups, notes, countTempos, setEndCounts, totalSetsCount, GLOBAL_GROUPS, beatStructure })); let raw = JSON.parse(redoStack.pop()); members = raw.members; setGroups = raw.setGroups; notes = raw.notes; countTempos = raw.countTempos; setEndCounts = raw.setEndCounts; totalSetsCount = raw.totalSetsCount; GLOBAL_GROUPS = raw.GLOBAL_GROUPS || { "全体一括": [] }; beatStructure = raw.beatStructure || []; saveStorage(); refreshAllUI(); }
+    
+    function refreshAllUI() { renderSetButtons(); updateJumpSetSelector(); initMembers(); buildSubFields(); buildTimelineUI(); buildVideoTimelineTicks(); updateGroupUI(); updateFrameGraphic(); }
+    function getMaxCount() { return setEndCounts[totalSetsCount]; }
+    
+    function getSegmentDetails(count) {
+        let maxC = getMaxCount(); if(count >= maxC) return { currentIdx: totalSetsCount - 1, nextIdx: totalSetsCount, ratio: 1.0 };
+        for(let i = 1; i <= totalSetsCount; i++) { if(count >= setEndCounts[i] && count < setEndCounts[i+1]) return { currentIdx: i, nextIdx: i + 1, ratio: (count - setEndCounts[i]) / (setEndCounts[i+1] - setEndCounts[i]) }; }
         return { currentIdx: 1, nextIdx: 2, ratio: 0 };
     }
-
-    function getEffectiveTempo(count) {
-        for (let i = count; i >= 0; i--) {
-            if (countTempos[i] !== undefined && countTempos[i] !== null && countTempos[i] !== '') {
-                return parseInt(countTempos[i]);
-            }
-        }
-        return 120;
-    }
+    function getEffectiveTempo(count) { for (let i = Math.floor(count); i >= 0; i--) { if (countTempos[i] !== undefined && countTempos[i] !== null && countTempos[i] !== '') return parseInt(countTempos[i]); } return 120; }
 
     function switchMode(mode) {
-        currentMode = mode;
-        document.getElementById('tab-view').classList.toggle('active', mode === 'view');
+        currentMode = mode; 
+        document.getElementById('tab-view').classList.toggle('active', mode === 'view'); 
         document.getElementById('tab-edit').classList.toggle('active', mode === 'edit');
-        document.getElementById('section-view').classList.toggle('active-section', mode === 'view');
         document.getElementById('section-edit').classList.toggle('active-section', mode === 'edit');
-        document.getElementById('edit-notice').style.display = mode === 'edit' ? 'inline-block' : 'none';
+        document.getElementById('edit-notice').style.display = mode === 'edit' ? 'inline-block' : 'none'; 
         document.getElementById('sidebar-timeline-card').style.display = mode === 'edit' ? 'block' : 'none';
-        
         document.getElementById('top-view-panel').style.display = mode === 'edit' ? 'none' : 'block';
-        document.getElementById('personal-timeline-title').innerText = mode === 'edit' ? "🎯 選択中の点の動き確認" : "🏃 自分の動き確認";
-
+        
+        const mainLayout = document.getElementById('main-layout-wrapper');
+        const personalCard = document.getElementById('personal-movement-card');
+        const subfieldsCard = document.getElementById('side-subfields-card');
+        const rightColumn = document.getElementById('right-column-container');
+        const personalTimelineBox = document.getElementById('personal-timeline');
         const subfieldScroll = document.getElementById('side-subfields-container');
 
+        document.body.classList.remove('fullscreen-active');
+
         if(mode === 'view') {
+            mainLayout.className = "main-wrapper view-layout";
+            subfieldsCard.after(personalCard); 
+            personalTimelineBox.className = "personal-timeline-box view-mode";
             subfieldScroll.className = "side-subfields-scroll view-mode";
-            currentCount = 0;
-            updateFrame();
+            if(isPlaying) togglePlay(); 
+            currentCount = 0; 
+            updateFrameGraphic();
         } else {
+            mainLayout.className = "main-wrapper edit-layout";
+            rightColumn.prepend(personalCard); 
+            personalCard.after(subfieldsCard); 
+            personalTimelineBox.className = "personal-timeline-box edit-mode";
             subfieldScroll.className = "side-subfields-scroll edit-mode";
-            cancelFormation();
-            changeEditingSet(editingSet); 
+            cancelFormation(); 
+            changeEditingSet(editingSet);
         }
+    }
+
+    function toggleFullscreenView() {
+        const isCurrentlyFullscreen = document.body.classList.contains('fullscreen-active');
+        const personalCard = document.getElementById('personal-movement-card');
+        const mainLayout = document.getElementById('main-layout-wrapper');
+        const personalTimelineBox = document.getElementById('personal-timeline');
+        const rightColumn = document.getElementById('right-column-container');
+
+        if (!isCurrentlyFullscreen) {
+            document.body.classList.add('fullscreen-active');
+            mainLayout.className = "main-wrapper view-layout"; 
+            rightColumn.appendChild(personalCard); 
+            personalTimelineBox.className = "personal-timeline-box fullscreen-mode";
+        } else {
+            document.body.classList.remove('fullscreen-active');
+            switchMode(currentMode);
+        }
+        updateFrameGraphic();
     }
 
     function updateJumpSetSelector() {
-        const select = document.getElementById('select-jump-set');
-        const currentVal = select.value;
-        select.innerHTML = '';
-        for (let i = 1; i <= totalSetsCount; i++) {
-            let opt = document.createElement('option');
-            opt.value = i;
-            opt.innerText = `セット ${getSetName(i)}`;
-            select.appendChild(opt);
-        }
-        if (currentVal) select.value = currentVal;
+        const select = document.getElementById('select-jump-set'); select.innerHTML = '';
+        for (let i = 1; i <= totalSetsCount; i++) { let opt = document.createElement('option'); opt.value = i; opt.innerText = `セット ${getSetName(i)}`; select.appendChild(opt); }
     }
-
     function jumpToSetAndBeat() {
-        if (isPlaying) return;
-        let setNum = parseInt(document.getElementById('select-jump-set').value) || 1;
-        let relativeBeat = parseInt(document.getElementById('input-jump-beat').value) || 0;
-        
-        let startCount = setEndCounts[setNum];
-        let maxAvailable = (setNum < totalSetsCount) ? (setEndCounts[setNum + 1] - startCount) : 999;
-        
-        if (relativeBeat > maxAvailable && setNum < totalSetsCount) {
-            relativeBeat = maxAvailable;
-            document.getElementById('input-jump-beat').value = relativeBeat;
-        }
-
-        currentCount = startCount + relativeBeat;
-        let maxC = getMaxCount();
-        if (currentCount > maxC) currentCount = maxC;
-
-        updateFrameOnlyUI(); 
-    }
-
-    function updateFrameOnlyUI() {
-        let maxC = getMaxCount();
-        document.getElementById('disp-max-count').innerText = maxC;
-        let seg = getSegmentDetails(currentCount);
-
-        let overallRatio = maxC > 0 ? (currentCount / maxC) * 100 : 0;
-        document.getElementById('timeline-progress').style.width = overallRatio + '%';
-        document.getElementById('timeline-handle').style.left = overallRatio + '%';
-
-        document.getElementById('disp-bpm').innerText = getEffectiveTempo(currentCount);
-        document.getElementById('select-jump-set').value = seg.currentIdx;
-        document.getElementById('input-jump-beat').value = currentCount - setEndCounts[seg.currentIdx];
-
-        members.forEach(m => {
-            let dot = document.getElementById(`member-${m.id}`);
-            let label = document.getElementById(`label-${m.id}`);
-            let badge = document.getElementById(`badge-${m.id}`);
-            if(!dot) return;
-            let posA = m.positions[seg.currentIdx] || {x:50, y:50};
-            let posB = m.positions[seg.nextIdx] || posA;
-            let currentX = posA.x + (posB.x - posA.x) * seg.ratio;
-            let currentY = posA.y + (posB.y - posA.y) * seg.ratio;
-            dot.style.left = currentX + '%'; dot.style.top = currentY + '%';
-            if(label) { label.style.left = currentX + '%'; label.style.top = currentY + '%'; }
-
-            if(badge) {
-                badge.style.left = currentX + '%'; badge.style.top = currentY + '%';
-                let stepsFromFront = Math.round((50 - (currentY / 2)) / STEP_METER);
-                let stepsFromLeft = Math.round(currentX / STEP_METER);
-                badge.innerText = `F:${stepsFromFront} L:${stepsFromLeft}`;
-            }
-        });
-
-        let currentNoteText = notes[currentCount] || "";
-        let activeMember = members.find(m => m.id === selectedMemberId);
-        let personalNoteText = (activeMember && activeMember.personalNotes) ? (activeMember.personalNotes[currentCount] || "") : "";
-        document.getElementById('note-display').innerHTML = `<strong>全体ノート:</strong> ${currentNoteText || "（指示なし）"} <br> <span style="color:#2563eb;"><strong>👤 個別ノート:</strong> ${personalNoteText || "（個別指示なし）"}</span>`;
-
-        updatePositionCoordinates();
-        highlightTimelineRow();
-        buildPersonalMovementTimeline();
+        if (isPlaying) togglePlay(); let setNum = parseInt(document.getElementById('select-jump-set').value) || 1;
+        currentCount = setEndCounts[setNum]; updateFrameGraphic();
     }
 
     function updateGroupUI() {
-        if (!setGroups[editingSet]) setGroups[editingSet] = {};
+        if (!setGroups[editingSet]) setGroups[editingSet] = {}; const groupSelect = document.getElementById('select-edit-group'); groupSelect.innerHTML = '';
+        let gOpt = document.createElement('optgroup'); gOpt.label = "🌟 共通グループ";
+        Object.keys(GLOBAL_GROUPS).forEach(gName => { let opt = document.createElement('option'); opt.value = "GLOBAL:" + gName; opt.innerText = gName; if("GLOBAL:" + gName === currentSelectedGroupName || gName === currentSelectedGroupName) { opt.selected = true; currentSelectedGroupName = "GLOBAL:" + gName; } gOpt.appendChild(opt); });
+        groupSelect.appendChild(gOpt);
         
-        const groupSelect = document.getElementById('select-edit-group');
-        groupSelect.innerHTML = '';
-        
-        let globalOptGroup = document.createElement('optgroup');
-        globalOptGroup.label = "🌟 全セット共通グループ";
-        Object.keys(GLOBAL_GROUPS).forEach(gName => {
-            let opt = document.createElement('option');
-            opt.value = "GLOBAL:" + gName; opt.innerText = gName;
-            if("GLOBAL:" + gName === currentSelectedGroupName || gName === currentSelectedGroupName) {
-                opt.selected = true; currentSelectedGroupName = "GLOBAL:" + gName;
-            }
-            globalOptGroup.appendChild(opt);
-        });
-        groupSelect.appendChild(globalOptGroup);
+        let sOpt = document.createElement('optgroup'); sOpt.label = "📦 このセット内限定";
+        Object.keys(setGroups[editingSet]).forEach(sName => { let opt = document.createElement('option'); opt.value = "SET:" + sName; opt.innerText = sName; if("SET:" + sName === currentSelectedGroupName) opt.selected = true; sOpt.appendChild(opt); });
+        groupSelect.appendChild(sOpt);
 
-        let specificOptGroup = document.createElement('optgroup');
-        specificOptGroup.label = `📂 セット ${getSetName(editingSet)} 固有のグループ`;
-        Object.keys(setGroups[editingSet]).forEach(gName => {
-            let opt = document.createElement('option');
-            opt.value = "SET:" + gName; opt.innerText = gName;
-            if("SET:" + gName === currentSelectedGroupName) opt.selected = true;
-            specificOptGroup.appendChild(opt);
-        });
-        groupSelect.appendChild(specificOptGroup);
-
-        let activeGroupMembers = [];
-        if (currentSelectedGroupName.startsWith("GLOBAL:")) {
-            let trueName = currentSelectedGroupName.replace("GLOBAL:", "");
-            activeGroupMembers = GLOBAL_GROUPS[trueName] || [];
-        } else if (currentSelectedGroupName.startsWith("SET:")) {
-            let trueName = currentSelectedGroupName.replace("SET:", "");
-            activeGroupMembers = setGroups[editingSet][trueName] || [];
-        }
-
-        const checkboxList = document.getElementById('group-member-checkboxes');
-        checkboxList.innerHTML = '';
-        
-        members.forEach(m => {
-            let lbl = document.createElement('label');
-            let isChecked = activeGroupMembers.includes(m.id) ? 'checked' : '';
-            let isDisabled = currentSelectedGroupName.startsWith("GLOBAL:") ? 'disabled' : '';
-            lbl.innerHTML = `<input type="checkbox" value="${m.id}" ${isChecked} ${isDisabled} onchange="toggleMemberGroupRelation(this)"> ${m.name.split(" ")[0]}`;
-            checkboxList.appendChild(lbl);
-        });
-
+        let activeGroupMembers = currentSelectedGroupName.startsWith("GLOBAL:") ? (GLOBAL_GROUPS[currentSelectedGroupName.replace("GLOBAL:", "")] || []) : (setGroups[editingSet][currentSelectedGroupName.replace("SET:", "")] || []);
+        const checkboxList = document.getElementById('group-member-checkboxes'); checkboxList.innerHTML = '';
+        members.forEach(m => { let lbl = document.createElement('label'); lbl.innerHTML = `<input type="checkbox" value="${m.id}" ${activeGroupMembers.includes(m.id) ? 'checked' : ''} onchange="toggleMemberGroupRelation(this)"> ${m.name.split(" ")[0]}`; checkboxList.appendChild(lbl); });
         updateHighlight();
     }
-
-    function createNewGroupForSet() {
-        let gName = prompt("現在のセットに新しく作るグループ名を入力してください:");
-        if(!gName || !gName.trim()) return;
-        gName = gName.trim();
-        if(GLOBAL_GROUPS[gName] || setGroups[editingSet][gName]) return alert("そのグループ名は既に存在します");
-        
-        setGroups[editingSet][gName] = [];
-        currentSelectedGroupName = "SET:" + gName;
-        updateGroupUI();
+    
+    function createGlobalGroupAction() {
+        let input = document.getElementById('input-new-global-group'); let gName = input.value.trim();
+        if(!gName) return alert("グループ名を入力してください。");
+        if(GLOBAL_GROUPS[gName]) return alert("既に存在する共通グループ名です。");
+        saveHistory(); GLOBAL_GROUPS[gName] = []; currentSelectedGroupName = "GLOBAL:" + gName; input.value = ''; updateGroupUI();
     }
 
-    // 新規追加：全セット共通グループを作る関数
-    function createNewGlobalGroup() {
-        let input = document.getElementById('input-new-global-group-name');
-        let gName = input.value.trim();
-        if(!gName) return alert("グループ名を入力してください");
-        if(GLOBAL_GROUPS[gName]) return alert("その共通グループ名は既に存在します");
-
-        saveHistory();
-        GLOBAL_GROUPS[gName] = []; 
-        currentSelectedGroupName = "GLOBAL:" + gName;
-        updateGroupUI();
-        input.value = '';
-        alert(`共通グループ「${gName}」を作成しました。一括配置チェックボックスでメンバーを追加してください。`);
-    }
-
+    function createNewGroupForSet() { let gName = prompt("セット内グループ名:"); if(!gName) return; saveHistory(); setGroups[editingSet][gName] = []; currentSelectedGroupName = "SET:" + gName; updateGroupUI(); }
+    
     function toggleMemberGroupRelation(cb) {
-        saveHistory();
-        let mId = parseInt(cb.value);
-        if (currentSelectedGroupName.startsWith("GLOBAL:")) {
-            let trueName = currentSelectedGroupName.replace("GLOBAL:", "");
-            let list = GLOBAL_GROUPS[trueName] || [];
-            if(cb.checked) {
-                if(!list.includes(mId)) list.push(mId);
-            } else {
-                GLOBAL_GROUPS[trueName] = list.filter(id => id !== mId);
-            }
-        } else if (currentSelectedGroupName.startsWith("SET:")) {
-            let trueName = currentSelectedGroupName.replace("SET:", "");
-            let list = setGroups[editingSet][trueName] || [];
-            if(cb.checked) {
-                if(!list.includes(mId)) list.push(mId);
-            } else {
-                setGroups[editingSet][trueName] = list.filter(id => id !== mId);
-            }
-        }
-        updateHighlight();
+        saveHistory(); let mId = parseInt(cb.value);
+        let trueName = currentSelectedGroupName.split(":")[1];
+        let isGlobal = currentSelectedGroupName.startsWith("GLOBAL:");
+        let list = isGlobal ? GLOBAL_GROUPS[trueName] : setGroups[editingSet][trueName];
+        if(cb.checked) { if(!list.includes(mId)) list.push(mId); } else { list = list.filter(id => id !== mId); if(isGlobal) GLOBAL_GROUPS[trueName] = list; else setGroups[editingSet][trueName] = list; }
+        saveStorage(); updateHighlight();
+    }
+    function onGroupChanged() { currentSelectedGroupName = document.getElementById('select-edit-group').value; updateGroupUI(); }
+
+    function addNewSet() { saveHistory(); totalSetsCount++; let lastEnd = setEndCounts[totalSetsCount - 1]; setEndCounts[totalSetsCount] = lastEnd + 8; members.forEach(m => { let prevPos = m.positions[totalSetsCount - 1]; m.positions[totalSetsCount] = { x: prevPos ? prevPos.x : 50, y: prevPos ? Math.min(100, prevPos.y + 5) : 50 }; }); rebuildTimelineStructure(); refreshAllUI(); changeEditingSet(totalSetsCount); }
+    function removeLastSet() { if(totalSetsCount <= 2) return; saveHistory(); if(editingSet === totalSetsCount) editingSet--; totalSetsCount--; setEndCounts.pop(); rebuildTimelineStructure(); refreshAllUI(); changeEditingSet(editingSet); }
+    
+    function addNewMemberDirect() {
+        let inputEl = document.getElementById('input-new-member-name'); let name = inputEl.value.trim(); if(!name) { alert("メンバー名を入力してください。"); return; }
+        saveHistory(); let newId = members.length > 0 ? Math.max(...members.map(m => m.id)) + 1 : 0;
+        let newMember = { id: newId, name: name, part: "一般", color: "#ef4444", positions: {}, personalNotes: {} };
+        for(let s=1; s<=totalSetsCount; s++) { newMember.positions[s] = { x: 50, y: 50 }; }
+        members.push(newMember); if(GLOBAL_GROUPS["全体一括"]) GLOBAL_GROUPS["全体一括"].push(newId);
+        selectedMemberId = newId; inputEl.value = ''; saveStorage(); refreshAllUI();
     }
 
-    function onGroupChanged() {
-        currentSelectedGroupName = document.getElementById('select-edit-group').value;
-        updateGroupUI();
+    function deleteSelectedMemberAction() {
+        let targetMember = members.find(m => m.id === selectedMemberId); if (!targetMember) return;
+        if (!confirm(`本当に「${targetMember.name}」を削除してもよろしいですか？`)) return;
+        saveHistory(); members = members.filter(m => m.id !== selectedMemberId);
+        Object.keys(GLOBAL_GROUPS).forEach(gName => { GLOBAL_GROUPS[gName] = GLOBAL_GROUPS[gName].filter(id => id !== selectedMemberId); });
+        Object.keys(setGroups).forEach(sNum => { Object.keys(setGroups[sNum]).forEach(gName => { setGroups[sNum][gName] = setGroups[sNum][gName].filter(id => id !== selectedMemberId); }); });
+        selectedMemberId = members.length > 0 ? members[0].id : 0; saveStorage(); refreshAllUI(); alert("メンバーを削除しました。");
     }
 
-    function addNewSet() {
+    /* ⏱️ イレギュラータイムラインコントロール用関数群 */
+    function insertCustomBeatAtSelected() {
         saveHistory();
-        totalSetsCount++;
-        let lastEnd = setEndCounts[totalSetsCount - 1];
-        setEndCounts[totalSetsCount] = lastEnd + 8;
+        let targetCount = Math.floor(currentCount);
+        let segment = getSegmentDetails(targetCount).currentIdx;
         
-        members.forEach(m => {
-            let prevPos = m.positions[totalSetsCount - 1];
-            m.positions[totalSetsCount] = { x: prevPos ? prevPos.x : 50, y: prevPos ? Math.min(100, prevPos.y + 5) : 50 }; 
-        });
-        setGroups[totalSetsCount] = JSON.parse(JSON.stringify(setGroups[totalSetsCount - 1] || {}));
-
-        refreshAllUI();
-        changeEditingSet(totalSetsCount);
-    }
-
-    function removeLastSet() {
-        if(totalSetsCount <= 2) return alert("これ以上セットは削除できません");
-        saveHistory();
-        if(editingSet === totalSetsCount) editingSet--;
-        totalSetsCount--;
-        setEndCounts.pop();
-        
-        refreshAllUI();
-        changeEditingSet(editingSet);
-    }
-
-    function addCountsTimeline() {
-        saveHistory();
-        let addNum = parseInt(document.getElementById('input-add-count-num').value) || 1;
-        let targetSegment = getSegmentDetails(currentCount).currentIdx;
-        
-        for(let i = targetSegment + 1; i <= totalSetsCount + 1; i++) {
-            setEndCounts[i] += addNum;
+        // 後続セットのカウント位置をすべて1つずらす
+        for(let i = segment + 1; i <= totalSetsCount + 1; i++) {
+            if(setEndCounts[i] !== undefined) setEndCounts[i] += 1;
         }
 
-        let newNotes = {}; let newTempos = {};
+        // notes / countTempos のオブジェクトキーも1つ後ろへ退避させる
+        shiftObjectKeysBackward(targetCount + 1, 1);
+        rebuildTimelineStructure();
+        refreshAllUI();
+    }
+
+    function insertCustomMeasureAtSelected() {
+        saveHistory();
+        let targetCount = Math.floor(currentCount);
+        let segment = getSegmentDetails(targetCount).currentIdx;
+        let baseMeter = parseInt(document.getElementById('input-meter').value) || 4;
+        
+        for(let i = segment + 1; i <= totalSetsCount + 1; i++) {
+            if(setEndCounts[i] !== undefined) setEndCounts[i] += baseMeter;
+        }
+
+        shiftObjectKeysBackward(targetCount + 1, baseMeter);
+        rebuildTimelineStructure();
+        refreshAllUI();
+    }
+
+    function deleteCustomBeatAtSelected() {
+        let targetCount = Math.floor(currentCount);
+        let segment = getSegmentDetails(targetCount).currentIdx;
+        if((setEndCounts[segment+1] - setEndCounts[segment]) <= 1) {
+            alert("セットの総拍数を0にすることはできません。");
+            return;
+        }
+        
+        saveHistory();
+        for(let i = segment + 1; i <= totalSetsCount + 1; i++) {
+            if(setEndCounts[i] !== undefined) setEndCounts[i] -= 1;
+        }
+
+        // 特定の位置のメモ・テンポ情報を詰め寄せる
+        delete notes[targetCount];
+        delete countTempos[targetCount];
+        members.forEach(m => { if(m.personalNotes) delete m.personalNotes[targetCount]; });
+
+        shiftObjectKeysForward(targetCount + 1, 1);
+        rebuildTimelineStructure();
+        if(currentCount >= getMaxCount()) currentCount = getMaxCount() - 1;
+        refreshAllUI();
+    }
+
+    function shiftObjectKeysBackward(startCount, amount) {
+        // notes
+        let newNotes = {};
         Object.keys(notes).forEach(k => {
-            let key = parseInt(k);
-            if(key > currentCount) newNotes[key + addNum] = notes[key];
-            else newNotes[key] = notes[key];
+            let keyInt = parseInt(k);
+            if(keyInt >= startCount) newNotes[keyInt + amount] = notes[k];
+            else newNotes[keyInt] = notes[k];
         });
+        notes = newNotes;
+
+        // countTempos
+        let newTempos = {};
         Object.keys(countTempos).forEach(k => {
-            let key = parseInt(k);
-            if(key > currentCount) newTempos[key + addNum] = countTempos[key];
-            else newTempos[key] = countTempos[key];
+            let keyInt = parseInt(k);
+            if(keyInt >= startCount) newTempos[keyInt + amount] = countTempos[k];
+            else newTempos[keyInt] = countTempos[k];
         });
-        notes = newNotes; countTempos = newTempos;
+        countTempos = newTempos;
 
+        // personalNotes
         members.forEach(m => {
-            let newPN = {};
-            Object.keys(m.personalNotes || {}).forEach(k => {
-                let key = parseInt(k);
-                if(key > currentCount) newPN[key + addNum] = m.personalNotes[key];
-                else newPN[key] = m.personalNotes[key];
-            });
-            m.personalNotes = newPN;
+            if(m.personalNotes) {
+                let newPNotes = {};
+                Object.keys(m.personalNotes).forEach(k => {
+                    let keyInt = parseInt(k);
+                    if(keyInt >= startCount) newPNotes[keyInt + amount] = m.personalNotes[k];
+                    else newPNotes[keyInt] = m.personalNotes[k];
+                });
+                m.personalNotes = newPNotes;
+            }
         });
-
-        refreshAllUI();
     }
 
-    function removeSelectedTimelineCount() {
-        saveHistory();
-        let targetSegment = getSegmentDetails(currentCount).currentIdx;
-        let setLength = setEndCounts[targetSegment+1] - setEndCounts[targetSegment];
-        if(setLength <= 1) return alert("最低1拍必要です");
-
-        for(let i = targetSegment + 1; i <= totalSetsCount + 1; i++) {
-            setEndCounts[i] -= 1;
-        }
-
-        let newNotes = {}; let newTempos = {};
+    function shiftObjectKeysForward(startCount, amount) {
+        let newNotes = {};
         Object.keys(notes).forEach(k => {
-            let key = parseInt(k);
-            if(key === currentCount) return;
-            if(key > currentCount) newNotes[key - 1] = notes[key];
-            else newNotes[key] = notes[key];
+            let keyInt = parseInt(k);
+            if(keyInt >= startCount) newNotes[keyInt - amount] = notes[k];
+            else if(keyInt < startCount - amount) newNotes[keyInt] = notes[k];
         });
+        notes = newNotes;
+
+        let newTempos = {};
         Object.keys(countTempos).forEach(k => {
-            let key = parseInt(k);
-            if(key === currentCount) return;
-            if(key > currentCount) newTempos[key - 1] = countTempos[key];
-            else newTempos[key] = countTempos[key];
+            let keyInt = parseInt(k);
+            if(keyInt >= startCount) newTempos[keyInt - amount] = countTempos[k];
+            else if(keyInt < startCount - amount) newTempos[keyInt] = countTempos[k];
         });
-        notes = newNotes; countTempos = newTempos;
+        countTempos = newTempos;
 
         members.forEach(m => {
-            let newPN = {};
-            Object.keys(m.personalNotes || {}).forEach(k => {
-                let key = parseInt(k);
-                if(key === currentCount) return;
-                if(key > currentCount) newPN[key - 1] = m.personalNotes[key];
-                else newPN[key] = m.personalNotes[key];
-            });
-            m.personalNotes = newPN;
+            if(m.personalNotes) {
+                let newPNotes = {};
+                Object.keys(m.personalNotes).forEach(k => {
+                    let keyInt = parseInt(k);
+                    if(keyInt >= startCount) newPNotes[keyInt - amount] = m.personalNotes[k];
+                    else if(keyInt < startCount - amount) newPNotes[keyInt] = m.personalNotes[k];
+                });
+                m.personalNotes = newPNotes;
+            }
         });
-
-        if(currentCount > 0) currentCount--;
-        refreshAllUI();
     }
 
     function renderSetButtons() {
-        const container = document.getElementById('set-buttons-container');
-        container.innerHTML = '';
+        const container = document.getElementById('set-buttons-container'); container.innerHTML = '';
         for(let i=1; i<=totalSetsCount; i++) {
-            let btn = document.createElement('button');
-            btn.innerText = `セット ${getSetName(i)} を編集`;
-            btn.id = `btn-set-${i}`;
-            btn.className = 'secondary';
-            btn.onclick = () => changeEditingSet(i);
-            container.appendChild(btn);
+            let btn = document.createElement('button'); btn.innerText = `${getSetName(i)}`; btn.id = `btn-set-${i}`;
+            btn.style.padding = "4px 10px"; btn.style.fontSize = "0.85em";
+            btn.style.backgroundColor = (editingSet === i) ? "#ef4444" : "#64748b";
+            btn.onclick = () => changeEditingSet(i); container.appendChild(btn);
         }
     }
-
-    function changeEditingSet(setNum) {
-        editingSet = setNum;
-        currentCount = setEndCounts[setNum];
-        
-        for(let i=1; i<=totalSetsCount; i++) {
-            let btn = document.getElementById(`btn-set-${i}`);
-            if(btn) btn.style.background = (i === setNum) ? '#10b981' : '#64748b';
-        }
-        updateGroupUI();
-        updateFrame();
-    }
+    function changeEditingSet(setNum) { editingSet = setNum; currentCount = setEndCounts[setNum]; refreshAllUI(); }
 
     function buildTimelineUI() {
-        const container = document.getElementById('timeline-container');
-        container.innerHTML = '';
-        let maxC = getMaxCount();
-        
+        const container = document.getElementById('timeline-container'); container.innerHTML = ''; let maxC = getMaxCount();
         for(let i=0; i<=maxC; i++) {
-            let row = document.createElement('div');
-            row.className = 'timeline-row';
-            row.id = `timeline-row-${i}`;
-            
-            let tempoVal = countTempos[i] !== undefined ? countTempos[i] : '';
-            let placeholderTempo = 120;
-            for (let j = i; j >= 0; j--) {
-                if (countTempos[j] !== undefined && countTempos[j] !== null && countTempos[j] !== '') {
-                    placeholderTempo = countTempos[j];
-                    break;
-                }
-            }
-
-            let displayLabel = getSetAndBeatString(i);
-
-            row.innerHTML = `
-                <span title="通しカウント: ${i}">${displayLabel}:</span>
-                <input type="number" value="${tempoVal}" placeholder="${placeholderTempo}" style="width:100%; padding:4px;" data-count="${i}" oninput="updateTimelineTempo(this)" onclick="event.stopPropagation();">
-                <input type="text" value="${notes[i] || ''}" placeholder="全体への指示・ノート" style="width:100%; padding:4px;" data-count="${i}" oninput="updateTimelineNote(this)" onclick="event.stopPropagation();">
-            `;
-            
-            row.onclick = () => {
-                currentCount = i;
-                updateFrame();
-            };
-            container.appendChild(row);
-        }
-        highlightTimelineRow();
-    }
-
-    function highlightTimelineRow() {
-        if(currentMode !== 'edit') return;
-        document.querySelectorAll('.timeline-row').forEach(r => r.classList.remove('selected-row'));
-        let currentRow = document.getElementById(`timeline-row-${currentCount}`);
-        if(currentRow) {
-            currentRow.classList.add('selected-row');
-            const container = document.getElementById('timeline-container');
-            container.scrollTop = currentRow.offsetTop - container.offsetTop - 50;
+            let row = document.createElement('div'); row.className = 'timeline-row'; row.id = `timeline-row-${i}`;
+            row.innerHTML = `<span>${getSetAndBeatString(i)}:</span><input type="number" value="${countTempos[i]||''}" placeholder="120" style="width:40px; padding:2px;" data-count="${i}" oninput="updateTimelineTempo(this)" onclick="event.stopPropagation();"><input type="text" value="${notes[i]||''}" placeholder="指示ノート" style="width:100%; padding:2px;" data-count="${i}" oninput="updateTimelineNote(this)" onclick="event.stopPropagation();">`;
+            row.onclick = () => { if(isPlaying) togglePlay(); currentCount = i; updateFrameGraphic(); }; container.appendChild(row);
         }
     }
-
-    function updateTimelineTempo(inputEl) {
-        saveHistory();
-        let c = parseInt(inputEl.dataset.count);
-        if(inputEl.value.trim() === '') delete countTempos[c];
-        else countTempos[c] = parseInt(inputEl.value);
-        buildTimelineUI();
-        updateFrame();
-    }
-
-    function updateTimelineNote(inputEl) {
-        saveHistory();
-        let c = parseInt(inputEl.dataset.count);
-        notes[c] = inputEl.value;
-        updateFrame();
-    }
-
-    function updatePersonalNote(inputEl) {
-        saveHistory();
-        let c = parseInt(inputEl.dataset.count);
-        let m = members.find(m => m.id === selectedMemberId);
-        if(m) {
-            if (!m.personalNotes) m.personalNotes = {};
-            m.personalNotes[c] = inputEl.value;
-        }
-        let currentNoteText = notes[currentCount] || "";
-        let personalNoteText = (m && m.personalNotes) ? (m.personalNotes[currentCount] || "") : "";
-        document.getElementById('note-display').innerHTML = `<strong>全体ノート:</strong> ${currentNoteText || "（指示なし）"} <br> <span style="color:#2563eb;"><strong>👤 個別ノート:</strong> ${personalNoteText || "（個別指示なし）"}</span>`;
-    }
-
-    function buildVideoTimelineTicks() {
-        const container = document.getElementById('timeline-ticks');
-        container.innerHTML = '';
-        for(let i = 1; i <= totalSetsCount; i++) {
-            let span = document.createElement('span');
-            span.innerText = `セット${getSetName(i)}(${setEndCounts[i]}拍)`;
-            container.appendChild(span);
-        }
-    }
+    function updateTimelineTempo(inputEl) { saveHistory(); let c = parseInt(inputEl.dataset.count); if(inputEl.value === '') delete countTempos[c]; else countTempos[c] = parseInt(inputEl.value); updateFrameGraphic(); }
+    function updateTimelineNote(inputEl) { saveHistory(); let c = parseInt(inputEl.dataset.count); notes[c] = inputEl.value; updateFrameGraphic(); }
+    function updatePersonalNote(inputEl) { saveHistory(); let c = parseInt(inputEl.dataset.count); let m = members.find(m => m.id === selectedMemberId); if(m) { if(!m.personalNotes) m.personalNotes = {}; m.personalNotes[c] = inputEl.value; } updateFrameGraphic(); }
+    function buildVideoTimelineTicks() { const container = document.getElementById('timeline-ticks'); container.innerHTML = ''; for(let i = 1; i <= totalSetsCount; i++) { let span = document.createElement('span'); span.innerText = `S${getSetName(i)}`; container.appendChild(span); } }
 
     function setupVideoTimeline() {
         const timeline = document.getElementById('video-timeline');
-        function handleTimelineClick(e) {
-            let rect = timeline.getBoundingClientRect();
-            let clickX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-            let ratio = Math.max(0, Math.min(1, clickX / rect.width));
-            currentCount = Math.round(ratio * getMaxCount());
-            updateFrame();
-        }
-        timeline.addEventListener('mousedown', (e) => {
-            handleTimelineClick(e);
-            function move(ev) { handleTimelineClick(ev); }
-            function up() { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); }
-            window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
-        });
+        timeline.addEventListener('mousedown', (e) => { if(isPlaying) togglePlay(); let rect = timeline.getBoundingClientRect(); currentCount = Math.round(((e.clientX - rect.left) / rect.width) * getMaxCount()); updateFrameGraphic(); });
     }
 
     function initColorPalettes() {
-        const newPalette = document.getElementById('new-member-color-palette');
-        newPalette.innerHTML = '';
-        PRESET_COLORS.forEach((c, idx) => {
-            let chip = document.createElement('div');
-            chip.className = 'color-chip' + (idx === 0 ? ' selected' : '');
-            chip.style.backgroundColor = c.hex;
-            chip.onclick = () => {
-                document.querySelectorAll('#new-member-color-palette .color-chip').forEach(el => el.classList.remove('selected'));
-                chip.classList.add('selected'); selectedNewMemberColor = c.hex;
-            };
-            newPalette.appendChild(chip);
-        });
-
-        const editPalette = document.getElementById('edit-member-color-palette');
-        editPalette.innerHTML = '';
+        const editPalette = document.getElementById('edit-member-color-palette'); editPalette.innerHTML = '';
         PRESET_COLORS.forEach(c => {
-            let chip = document.createElement('div');
-            chip.className = 'color-chip'; chip.id = `edit-chip-${c.hex.replace('#','')}`; chip.style.backgroundColor = c.hex;
-            chip.onclick = () => { changeMemberColor(c.hex); };
+            let chip = document.createElement('div'); chip.className = 'color-chip'; chip.style.backgroundColor = c.hex; chip.title = c.name;
+            chip.onclick = () => {
+                saveHistory(); let m = members.find(m => m.id === selectedMemberId); if(m) m.color = c.hex;
+                document.querySelectorAll('.color-chip').forEach(el => el.classList.remove('selected-chip'));
+                chip.classList.add('selected-chip'); refreshAllUI();
+            };
             editPalette.appendChild(chip);
         });
     }
-
-    function addNewMember() {
-        let nameInput = document.getElementById('new-member-name');
-        let partInput = document.getElementById('new-member-part');
-        if(!nameInput.value.trim()) return alert("名前を入力してください");
-
-        saveHistory();
-        let newId = members.length > 0 ? Math.max(...members.map(m => m.id)) + 1 : 0;
-        let initPositions = {};
-        for(let i=1; i<=totalSetsCount; i++) {
-            initPositions[i] = { x: 20 + (newId * 5) % 60, y: 40 };
-        }
-
-        let newMember = { id: newId, name: nameInput.value, part: partInput.value || "一般", color: selectedNewMemberColor, positions: initPositions, personalNotes: {} };
-        members.push(newMember);
-        if(GLOBAL_GROUPS["全体一括"] && !GLOBAL_GROUPS["全体一括"].includes(newId)) GLOBAL_GROUPS["全体一括"].push(newId);
-
-        selectedMemberId = newId;
-        refreshAllUI();
-        nameInput.value = ""; partInput.value = "";
-    }
-
-    function changeMemberColor(colorHex) {
-        saveHistory();
-        let m = members.find(m => m.id === selectedMemberId);
-        if(m) { m.color = colorHex; refreshAllUI(); }
-    }
-
-    function changeMemberPart(partStr) {
-        saveHistory();
-        let m = members.find(m => m.id === selectedMemberId);
-        if(m) { m.part = partStr || "一般"; updateHighlight(); }
-    }
+    function changeMemberPart(partStr) { saveHistory(); let m = members.find(m => m.id === selectedMemberId); if(m) { m.part = partStr || "一般"; updateHighlight(); } }
 
     const field = document.getElementById('field');
-
-    // 歩数座標が分かりやすくなるよう、目安となる目盛り線（グリッド）を描画
-    function createFieldGrid(targetField, isMainField = false) {
-        // 横ライン (Frontからの歩数用。Y軸方向)
-        // 1歩 = 0.625cm、フィールド高さは計80歩分想定。大まかな等間隔区切り。
-        for(let pct = 10; pct < 100; pct += 10) {
-            let line = document.createElement('div');
-            // 20%, 40%, 60%, 80% などの主要なラインを目立たせる
-            line.className = 'grid-line' + (pct % 20 === 0 ? ' major' : '');
-            line.style.top = pct + '%'; line.style.left = '0'; line.style.width = '100%'; line.style.height = '1px';
-            targetField.appendChild(line);
-
-            if(isMainField && pct % 20 === 0) {
-                let steps = Math.round((50 - (pct / 2)) / STEP_METER);
-                let lbl = document.createElement('div'); lbl.className = 'axis-label';
-                lbl.innerText = `F:${steps}`; lbl.style.top = (pct + 0.5) + '%'; lbl.style.left = '10px';
-                targetField.appendChild(lbl);
-            }
-        }
-        
-        // 縦ライン (Leftサイドラインからの歩数用。X軸方向)
-        for(let pct = 12.5; pct < 100; pct += 12.5) {
-            let line = document.createElement('div');
-            line.className = 'grid-line' + (pct % 25 === 0 ? ' major' : '');
-            line.style.left = pct + '%'; line.style.top = '0'; line.style.width = '1px'; line.style.height = '100%';
-            targetField.appendChild(line);
-
-            if(isMainField && pct % 25 === 0) {
-                let steps = Math.round(pct / STEP_METER);
-                let lbl = document.createElement('div'); lbl.className = 'axis-label';
-                lbl.innerText = `L:${steps}`; lbl.style.left = (pct + 0.5) + '%'; lbl.style.top = '5px';
-                targetField.appendChild(lbl);
-            }
-        }
+    function createFieldGrid(targetField) {
+        for(let pct = 10; pct < 100; pct += 10) { let line = document.createElement('div'); line.className = 'grid-line' + (pct % 20 === 0 ? ' major' : ''); line.style.top = pct + '%'; line.style.left = '0'; line.style.width = '100%'; line.style.height = '1px'; targetField.appendChild(line); }
+        for(let pct = 12.5; pct < 100; pct += 12.5) { let line = document.createElement('div'); line.className = 'grid-line' + (pct % 25 === 0 ? ' major' : ''); line.style.left = pct + '%'; line.style.top = '0'; line.style.width = '1px'; line.style.height = '100%'; targetField.appendChild(line); }
     }
 
     function initMembers() {
-        document.querySelectorAll('.member-dot, .dot-label, .coordinate-badge, .axis-label, .grid-line').forEach(el => el.remove());
-        createFieldGrid(field, true); // メインフィールドに目盛りと数字ラベルを生成
-
-        const selectMember = document.getElementById('select-member');
-        selectMember.innerHTML = '';
-        
+        document.querySelectorAll('.member-dot, .dot-label, .coordinate-badge, .grid-line').forEach(el => el.remove()); createFieldGrid(field);
+        const selectMember = document.getElementById('select-member'); selectMember.innerHTML = '';
         members.forEach(m => {
-            let opt = document.createElement('option');
-            opt.value = m.id; opt.innerText = `${m.name} (${m.part})`;
-            selectMember.appendChild(opt);
-
-            let dot = document.createElement('div'); dot.className = 'member-dot'; dot.id = `member-${m.id}`;
-            dot.style.backgroundColor = m.color || "#f59e0b";
-            
-            let label = document.createElement('div'); label.className = 'dot-label'; label.id = `label-${m.id}`;
-            label.innerText = m.name.split(" ")[0];
-
-            // 各ドットのすぐ下にリアルタイムに現在位置（歩数座標）を表示するバッジを作成
+            let opt = document.createElement('option'); opt.value = m.id; opt.innerText = `${m.name}`; selectMember.appendChild(opt);
+            let dot = document.createElement('div'); dot.className = 'member-dot'; dot.id = `member-${m.id}`; dot.style.backgroundColor = m.color;
+            let label = document.createElement('div'); label.className = 'dot-label'; label.id = `label-${m.id}`; label.innerText = m.name.split(" ")[0];
             let badge = document.createElement('div'); badge.className = 'coordinate-badge'; badge.id = `badge-${m.id}`;
-
-            setupDragAndDrop(dot, m);
-            dot.onclick = () => { if (activeTool) return; selectedMemberId = m.id; updateHighlight(); };
-            
+            setupDragAndDrop(dot, m); dot.onclick = () => { selectedMemberId = m.id; updateHighlight(); };
             field.appendChild(dot); field.appendChild(label); field.appendChild(badge);
         });
         updateHighlight();
     }
 
     function buildPersonalMovementTimeline() {
-        const container = document.getElementById('personal-timeline');
-        const badge = document.getElementById('target-member-display-badge');
-        let m = members.find(m => m.id === selectedMemberId);
-        if (!m) {
-            badge.innerText = "🎯 対象: 未選択"; container.innerText = "メンバーが選択されていません。"; return;
-        }
-
-        badge.innerText = `🎯 対象: ${m.name} (${m.part})`;
-        container.innerHTML = '';
-        let maxC = getMaxCount();
-
-        for (let i = 0; i <= maxC; i++) {
-            let seg = getSegmentDetails(i);
-            let posA = m.positions[seg.currentIdx] || {x:50, y:50};
-            let posB = m.positions[seg.nextIdx] || posA;
-            let currentX = posA.x + (posB.x - posA.x) * seg.ratio;
-            let currentY = posA.y + (posB.y - posA.y) * seg.ratio;
-
-            let stepsFromFront = Math.round((50 - (currentY / 2)) / STEP_METER);
-            let stepsFromLeft = Math.round(currentX / STEP_METER);
-
-            let row = document.createElement('div');
-            row.className = 'personal-beat-row';
+        const container = document.getElementById('personal-timeline'); let m = members.find(m => m.id === selectedMemberId); if (!m) { container.innerHTML = ''; return; }
+        document.getElementById('target-member-display-badge').innerText = `🎯 対象: ${m.name}`; container.innerHTML = '';
+        for (let i = 0; i <= getMaxCount(); i++) {
+            let seg = getSegmentDetails(i); let posA = m.positions[seg.currentIdx] || {x:50, y:50}; let posB = m.positions[seg.nextIdx] || posA;
+            let cx = posA.x + (posB.x - posA.x) * seg.ratio; let cy = posA.y + (posB.y - posA.y) * seg.ratio;
+            let row = document.createElement('div'); row.className = 'personal-beat-row' + (Math.floor(currentCount) === i ? ' active-beat' : '');
             row.id = `personal-beat-row-${i}`;
-            if (i === currentCount) row.classList.add('active-beat');
-
-            let displayLabel = getSetAndBeatString(i);
-
-            let pNoteText = (m.personalNotes) ? (m.personalNotes[i] || "") : "";
-            let noteContentArea = (currentMode === 'edit') 
-                ? `<input type="text" value="${pNoteText}" placeholder="個別ノート" style="width:95%; padding:2px 4px; font-size:0.9em;" data-count="${i}" oninput="updatePersonalNote(this)" onclick="event.stopPropagation();">`
-                : `<span style="color:#2563eb;">${pNoteText || "—"}</span>`;
-
-            row.innerHTML = `
-                <span class="beat-label" title="通しカウント: ${i}">${displayLabel}:</span>
-                <span class="pos-text">F:${stepsFromFront} / L:${stepsFromLeft}</span>
-                <div>${noteContentArea}</div>
-            `;
-            
-            row.onclick = () => {
-                currentCount = i;
-                updateFrame();
-            };
+            row.innerHTML = `<span class="beat-label">${getSetAndBeatString(i)}:</span><span class="pos-text">F:${Math.round((50 - (cy / 2)) / STEP_METER)} / L:${Math.round(cx / STEP_METER)}</span><div><input type="text" value="${m.personalNotes?.[i]||''}" data-count="${i}" oninput="updatePersonalNote(this)" style="width:100%; padding:2px;" onclick="event.stopPropagation();"></div>`;
             container.appendChild(row);
         }
-
-        let activeRow = document.getElementById(`personal-beat-row-${currentCount}`);
-        if(activeRow) container.scrollTop = activeRow.offsetTop - container.offsetTop - 40;
     }
 
     function buildSubFields() {
-        const sideContainer = document.getElementById('side-subfields-container');
-        sideContainer.innerHTML = '';
-
+        const sideContainer = document.getElementById('side-subfields-container'); if(!sideContainer) return; sideContainer.innerHTML = '';
         for(let s=1; s<=totalSetsCount; s++) {
-            let box = document.createElement('div'); box.className = 'sub-field-box';
-            box.innerHTML = `<div><span style="font-size:0.8em; font-weight:bold; color:#10b981;">■ セット ${getSetName(s)} 全体像</span></div>`;
-            
-            let sField = document.createElement('div'); sField.className = 'sub-field-container';
-            createFieldGrid(sField, false);
-
+            let box = document.createElement('div'); box.className = 'sub-field-box'; box.innerHTML = `<div><span style="font-size:0.8em; font-weight:bold; color:#10b981;">■ セット ${getSetName(s)} 全体像</span></div>`;
+            let sField = document.createElement('div'); sField.className = 'sub-field-container'; createFieldGrid(sField);
             members.forEach(m => {
-                let sDot = document.createElement('div'); sDot.className = `sub-dot sub-dot-${s}-${m.id}`;
-                sDot.style.backgroundColor = m.color || "#cbd5e1";
-                let pos = m.positions[s] || {x:50, y:50};
-                sDot.style.left = pos.x + '%'; sDot.style.top = pos.y + '%';
-                sField.appendChild(sDot);
+                let sDot = document.createElement('div'); let highlightClass = (m.id === selectedMemberId) ? "sub-dot active-subdot" : "sub-dot";
+                sDot.className = `${highlightClass} sub-dot-${s}-${m.id}`; sDot.style.backgroundColor = m.color;
+                let pos = m.positions[s] || {x:50, y:50}; sDot.style.left = pos.x + '%'; sDot.style.top = pos.y + '%'; sField.appendChild(sDot);
             });
             box.appendChild(sField); sideContainer.appendChild(box);
         }
@@ -1442,296 +1069,227 @@
 
     function setupDragAndDrop(dot, memberData) {
         let isDragging = false;
-        function moveHandler(e) {
-            if (!isDragging || currentMode !== 'edit' || activeTool) return;
-            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            let rect = field.getBoundingClientRect();
-            
-            let xPercent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
-            let yPercent = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
-
-            if(!memberData.positions[editingSet]) memberData.positions[editingSet] = {x:50, y:50};
-            memberData.positions[editingSet].x = xPercent; memberData.positions[editingSet].y = yPercent;
-
-            dot.style.left = xPercent + '%'; dot.style.top = yPercent + '%';
-            buildSubFields(); updateFrame();
-        }
-        dot.addEventListener('mousedown', () => { if(!activeTool){ saveHistory(); isDragging = true; selectedMemberId = memberData.id; updateHighlight(); } });
-        window.addEventListener('mousemove', moveHandler); window.addEventListener('mouseup', () => isDragging = false);
+        dot.addEventListener('mousedown', (e) => { e.stopPropagation(); if(currentMode === 'edit') { saveHistory(); isDragging = true; selectedMemberId = memberData.id; updateHighlight(); } });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return; let rect = field.getBoundingClientRect();
+            memberData.positions[editingSet].x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            memberData.positions[editingSet].y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+            updateFrameGraphic(); buildSubFields();
+        });
+        window.addEventListener('mouseup', () => { if(isDragging) { isDragging = false; saveStorage(); } });
     }
 
+    let audioContext = null;
     function playClickSound(isDownBeat) {
-        if (!document.getElementById('chk-sound').checked) return;
-        try {
-            let context = new (window.AudioContext || window.webkitAudioContext)();
-            let osc = context.createOscillator(); let gain = context.createGain();
-            osc.connect(gain); gain.connect(context.destination);
-            osc.frequency.setValueAtTime(isDownBeat ? 900 : 550, context.currentTime);
-            gain.gain.setValueAtTime(0.4, context.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.08);
-            osc.start(); osc.stop(context.currentTime + 0.08);
-            setTimeout(() => { context.close(); }, 150);
-        } catch(e) {}
+        try { if (!document.getElementById('chk-sound').checked) return; if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)(); let osc = audioContext.createOscillator(); let gain = audioContext.createGain(); osc.connect(gain); gain.connect(audioContext.destination); osc.frequency.setValueAtTime(isDownBeat ? 750 : 480, audioContext.currentTime); gain.gain.setValueAtTime(0.25, audioContext.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.04); osc.start(); osc.stop(audioContext.currentTime + 0.05); } catch(e) {}
+    }
+
+    function togglePlay() {
+        const btn = document.getElementById('btn-toggle-play'); let maxC = getMaxCount();
+        if (isPlaying) {
+            isPlaying = false; if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+            btn.innerText = "▶️ 再生"; btn.style.backgroundColor = "#2563eb";
+        } else {
+            if (currentCount >= maxC) { currentCount = 0; lastPlayedCount = -1; }
+            isPlaying = true; btn.innerText = "⏸️ 一時停止"; btn.style.backgroundColor = "#dc2626";
+            lastAnimTime = performance.now(); lastPlayedCount = Math.floor(currentCount) - 1;
+            animationFrameId = requestAnimationFrame(animationLoop);
+        }
+    }
+
+    function animationLoop(timestamp) {
+        if (!isPlaying) return;
+        let delta = timestamp - lastAnimTime; lastAnimTime = timestamp;
+        let tempo = getEffectiveTempo(currentCount); 
+        let speedMultiplier = parseFloat(document.getElementById('select-speed').value) || 1.0;
+        let msPerBeat = (60.0 / tempo) * 1000.0; 
+        let deltaCount = (delta / msPerBeat) * speedMultiplier; 
+        
+        currentCount += deltaCount; let maxC = getMaxCount();
+        if (currentCount >= maxC) {
+            currentCount = maxC; isPlaying = false; animationFrameId = null;
+            document.getElementById('btn-toggle-play').innerText = "▶️ 再生";
+            document.getElementById('btn-toggle-play').style.backgroundColor = "#2563eb";
+            updateFrameGraphic(); return;
+        }
+        let currentFloorCount = Math.floor(currentCount); 
+        if (currentFloorCount > lastPlayedCount) {
+            let isDown = false;
+            if(beatStructure[currentFloorCount]) { isDown = (beatStructure[currentFloorCount].beat === 1); }
+            playClickSound(isDown); lastPlayedCount = currentFloorCount;
+        }
+        updateFrameGraphic(); animationFrameId = requestAnimationFrame(animationLoop);
+    }
+
+    function updateFrameGraphic() {
+        let maxC = getMaxCount(); let seg = getSegmentDetails(currentCount);
+        document.getElementById('timeline-progress').style.width = (currentCount / maxC * 100) + '%';
+        document.getElementById('timeline-handle').style.left = (currentCount / maxC * 100) + '%';
+        document.getElementById('select-jump-set').value = seg.currentIdx;
+        
+        let roundedCount = Math.floor(currentCount);
+        document.getElementById('disp-current-position').innerText = getSetAndBeatString(currentCount);
+        document.getElementById('disp-bpm').innerText = getEffectiveTempo(currentCount);
+        document.getElementById('disp-max-count').innerText = setEndCounts[seg.currentIdx+1] - setEndCounts[seg.currentIdx];
+
+        members.forEach(m => {
+            let dot = document.getElementById(`member-${m.id}`); let label = document.getElementById(`label-${m.id}`); let badge = document.getElementById(`badge-${m.id}`);
+            let posA = m.positions[seg.currentIdx] || {x:50, y:50}; let posB = m.positions[seg.nextIdx] || posA;
+            let cx = posA.x + (posB.x - posA.x) * seg.ratio; let cy = posA.y + (posB.y - posA.y) * seg.ratio;
+            if(dot) { dot.style.left = cx + '%'; dot.style.top = cy + '%'; }
+            if(label) { label.style.left = cx + '%'; label.style.top = cy + '%'; }
+            if(badge) { badge.style.left = cx + '%'; badge.style.top = cy + '%'; badge.innerText = `F:${Math.round((50 - (cy / 2)) / STEP_METER)} L:${Math.round(cx / STEP_METER)}`; }
+        });
+        
+        document.getElementById('note-display').innerText = notes[roundedCount] || "ノートなし";
+        document.querySelectorAll('.timeline-row').forEach(r => r.classList.remove('selected-row'));
+        
+        let activeRow = document.getElementById(`timeline-row-${roundedCount}`); 
+        if(activeRow && currentMode === 'edit') { activeRow.classList.add('selected-row'); }
+
+        buildPersonalMovementTimeline();
+        let activePersonalRow = document.getElementById(`personal-beat-row-${roundedCount}`);
+        if(activePersonalRow) { activePersonalRow.classList.add('active-beat'); }
     }
 
     function startFormation(type) {
-        if(currentMode !== 'edit') return alert("編集モードのみ有効");
-        
-        let targets = [];
-        if (currentSelectedGroupName.startsWith("GLOBAL:")) {
-            let trueName = currentSelectedGroupName.replace("GLOBAL:", "");
-            targets = GLOBAL_GROUPS[trueName] || [];
-        } else if (currentSelectedGroupName.startsWith("SET:")) {
-            let trueName = currentSelectedGroupName.replace("SET:", "");
-            targets = setGroups[editingSet][trueName] || [];
-        }
-
-        if(targets.length === 0) return alert("選択中のグループに所属メンバーがいません。");
-        
         activeTool = type; toolStep = 1; toolPoints = [];
-        const guide = document.getElementById('formation-guide');
-        guide.style.display = 'block';
-        guide.innerText = `📐一括配置】ステップ1: 起点(または中心)をフィールド上でクリック。`;
+        const guide = document.getElementById('formation-guide'); guide.style.display = 'block';
+        if(type === 'line') { document.getElementById('formation-guide-text').innerText = "【直線配置】 1点目：起点（スタート端）をクリックしてください。"; }
+        else if(type === 'arc') { document.getElementById('formation-guide-text').innerText = "【円弧配置】 1点目：起点（スタート端）をクリックしてください。"; }
+        else if(type === 'circle') { document.getElementById('formation-guide-text').innerText = "【正円配置】 1点目：円の中心となる点をクリックしてください。"; }
     }
-
-    function cancelFormation() { activeTool = null; toolStep = 0; document.getElementById('formation-guide').style.display = 'none'; }
-
+    
+    function cancelFormation() { activeTool = null; toolStep = 0; toolPoints = []; document.getElementById('formation-guide').style.display = 'none'; }
+    
     field.addEventListener('click', (e) => {
         if (!activeTool) return;
         let rect = field.getBoundingClientRect();
         let clickX = ((e.clientX - rect.left) / rect.width) * 100;
         let clickY = ((e.clientY - rect.top) / rect.height) * 100;
         toolPoints.push({ x: clickX, y: clickY });
-        const guide = document.getElementById('formation-guide');
-        
+
+        let ids = currentSelectedGroupName.startsWith("GLOBAL:") ? GLOBAL_GROUPS[currentSelectedGroupName.replace("GLOBAL:", "")] : setGroups[editingSet][currentSelectedGroupName.replace("SET:", "")];
+        let targetGroupMembers = members.filter(m => ids.includes(m.id));
+        if (targetGroupMembers.length === 0) { alert("選択されたグループにメンバーがいません。"); cancelFormation(); return; }
+
         if (activeTool === 'line') {
-            if (toolStep === 1) { toolStep = 2; guide.innerText = "📐ステップ2: 終点 の位置をクリックしてください。"; } 
-            else if (toolStep === 2) { saveHistory(); applyLineFormation(toolPoints[0], toolPoints[1]); cancelFormation(); }
-        } else if (activeTool === 'arc') {
-            if (toolStep === 1) { toolStep = 2; guide.innerText = "📐ステップ2: 頂点(V字の底) の位置をクリックしてください。"; } 
-            else if (toolStep === 2) { toolStep = 3; guide.innerText = "📐ステップ3: 終点 の位置をクリックしてください。"; } 
-            else if (toolStep === 3) { saveHistory(); applyArcFormation(toolPoints[0], toolPoints[1], toolPoints[2]); cancelFormation(); }
-        } else if (activeTool === 'circle') {
-            if (toolStep === 1) { toolStep = 2; guide.innerText = "📐ステップ2: 外周の1点 をクリックしてください。"; } 
-            else if (toolStep === 2) { saveHistory(); applyCircleFormation(toolPoints[0], toolPoints[1]); cancelFormation(); }
+            if (toolStep === 1) {
+                toolStep = 2; document.getElementById('formation-guide-text').innerText = "【直線配置】 2点目：終点（ラスト端）をクリックしてください。";
+            } else if (toolStep === 2) {
+                saveHistory();
+                targetGroupMembers.forEach((m, i) => {
+                    let r = targetGroupMembers.length > 1 ? i / (targetGroupMembers.length - 1) : 0;
+                    m.positions[editingSet] = { x: toolPoints[0].x + (toolPoints[1].x - toolPoints[0].x) * r, y: toolPoints[0].y + (toolPoints[1].y - toolPoints[0].y) * r };
+                });
+                cancelFormation(); refreshAllUI();
+            }
+        } 
+        else if (activeTool === 'arc') {
+            if (toolStep === 1) {
+                toolStep = 2; document.getElementById('formation-guide-text').innerText = "【円弧配置】 2点目：終点（ラスト端）をクリックしてください。";
+            } else if (toolStep === 2) {
+                toolStep = 3; document.getElementById('formation-guide-text').innerText = "【円弧配置】 3点目：弧の頂点（中央のふくらみ）をクリックしてください。";
+            } else if (toolStep === 3) {
+                saveHistory();
+                let p1 = toolPoints[0], p2 = toolPoints[1], p3 = toolPoints[2];
+                targetGroupMembers.forEach((m, i) => {
+                    let t = targetGroupMembers.length > 1 ? i / (targetGroupMembers.length - 1) : 0;
+                    let cx = (1-t)*(1-t)*p1.x + 2*(1-t)*t*p3.x + t*t*p2.x;
+                    let cy = (1-t)*(1-t)*p1.y + 2*(1-t)*t*p3.y + t*t*p2.y;
+                    m.positions[editingSet] = { x: cx, y: cy };
+                });
+                cancelFormation(); refreshAllUI();
+            }
+        } 
+        else if (activeTool === 'circle') {
+            if (toolStep === 1) {
+                toolStep = 2; document.getElementById('formation-guide-text').innerText = "【正円配置】 2点目：半径の端点（円周上のどこか1点）をクリックしてください。";
+            } else if (toolStep === 2) {
+                saveHistory();
+                let center = toolPoints[0], edge = toolPoints[1];
+                let radiusX = Math.abs(edge.x - center.x);
+                let radiusY = Math.abs(edge.y - center.y);
+                let rRadius = Math.sqrt(radiusX * radiusX + radiusY * radiusY);
+                
+                targetGroupMembers.forEach((m, i) => {
+                    let angle = (i / targetGroupMembers.length) * Math.PI * 2;
+                    let cx = center.x + rRadius * Math.cos(angle);
+                    let cy = center.y + (rRadius * 2) * Math.sin(angle) * 0.5; 
+                    m.positions[editingSet] = { x: Math.max(0, Math.min(100, cx)), y: Math.max(0, Math.min(100, cy)) };
+                });
+                cancelFormation(); refreshAllUI();
+            }
         }
     });
 
-    function getGroupTargetMembers() {
-        let ids = [];
-        if (currentSelectedGroupName.startsWith("GLOBAL:")) {
-            let trueName = currentSelectedGroupName.replace("GLOBAL:", "");
-            ids = GLOBAL_GROUPS[trueName] || [];
-        } else if (currentSelectedGroupName.startsWith("SET:")) {
-            let trueName = currentSelectedGroupName.replace("SET:", "");
-            ids = setGroups[editingSet][trueName] || [];
-        }
-        return members.filter(m => ids.includes(m.id));
-    }
-
-    function applyLineFormation(p1, p2) {
-        let targets = getGroupTargetMembers();
-        let total = targets.length;
-        targets.forEach((m, idx) => {
-            let ratio = idx / Math.max(1, total - 1);
-            m.positions[editingSet] = { x: p1.x + (p2.x - p1.x) * ratio, y: p1.y + (p2.y - p1.y) * ratio };
-        });
-        refreshAllUI();
-    }
-
-    function applyArcFormation(p1, p2, p3) {
-        let targets = getGroupTargetMembers();
-        let total = targets.length;
-        targets.forEach((m, idx) => {
-            let ratio = idx / Math.max(1, total - 1);
-            let targetX, targetY;
-            if(ratio <= 0.5) {
-                let segmentRatio = ratio / 0.5;
-                targetX = p1.x + (p2.x - p1.x) * segmentRatio; targetY = p1.y + (p2.y - p1.y) * segmentRatio;
-            } else {
-                let segmentRatio = (ratio - 0.5) / 0.5;
-                targetX = p2.x + (p3.x - p2.x) * segmentRatio; targetY = p2.y + (p3.y - p2.y) * segmentRatio;
-            }
-            m.positions[editingSet] = { x: targetX, y: targetY };
-        });
-        refreshAllUI();
-    }
-
-    function applyCircleFormation(center, radiusPoint) {
-        let radius = Math.sqrt(Math.pow(radiusPoint.x - center.x, 2) + Math.pow(radiusPoint.y - center.y, 2));
-        let targets = getGroupTargetMembers();
-        let total = targets.length;
-        targets.forEach((m, idx) => {
-            let angle = (idx / total) * Math.PI * 2;
-            m.positions[editingSet] = { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius * 2 };
-        });
-        refreshAllUI();
-    }
-
-    function updateFrame() {
-        let maxC = getMaxCount();
-        document.getElementById('disp-max-count').innerText = maxC;
-        let seg = getSegmentDetails(currentCount);
-
-        let overallRatio = maxC > 0 ? (currentCount / maxC) * 100 : 0;
-        document.getElementById('timeline-progress').style.width = overallRatio + '%';
-        document.getElementById('timeline-handle').style.left = overallRatio + '%';
-
-        let currentBPM = getEffectiveTempo(currentCount);
-        document.getElementById('disp-bpm').innerText = currentBPM;
-
-        document.getElementById('select-jump-set').value = seg.currentIdx;
-        document.getElementById('input-jump-beat').value = currentCount - setEndCounts[seg.currentIdx];
-
-        members.forEach(m => {
-            let dot = document.getElementById(`member-${m.id}`);
-            let label = document.getElementById(`label-${m.id}`);
-            let badge = document.getElementById(`badge-${m.id}`);
-            if(!dot) return;
-            let posA = m.positions[seg.currentIdx] || {x:50, y:50};
-            let posB = m.positions[seg.nextIdx] || posA;
-            let currentX = posA.x + (posB.x - posA.x) * seg.ratio;
-            let currentY = posA.y + (posB.y - posA.y) * seg.ratio;
-            dot.style.left = currentX + '%'; dot.style.top = currentY + '%';
-            if(label) { label.style.left = currentX + '%'; label.style.top = currentY + '%'; }
-
-            if(badge) {
-                badge.style.left = currentX + '%'; badge.style.top = currentY + '%';
-                let stepsFromFront = Math.round((50 - (currentY / 2)) / STEP_METER);
-                let stepsFromLeft = Math.round(currentX / STEP_METER);
-                badge.innerText = `F:${stepsFromFront} L:${stepsFromLeft}`;
-            }
-        });
-
-        let currentNoteText = notes[currentCount] || "";
-        let activeMember = members.find(m => m.id === selectedMemberId);
-        let personalNoteText = (activeMember && activeMember.personalNotes) ? (activeMember.personalNotes[currentCount] || "") : "";
-        
-        document.getElementById('note-display').innerHTML = `<strong>全体ノート:</strong> ${currentNoteText || "（指示なし）"} <br> <span style="color:#2563eb;"><strong>👤 個別ノート:</strong> ${personalNoteText || "（個別指示なし）"}</span>`;
-
-        updatePositionCoordinates();
-        highlightTimelineRow();
-        buildPersonalMovementTimeline();
-
-        if (isPlaying) {
-            let meter = parseInt(document.getElementById('input-meter').value);
-            playClickSound(currentCount % meter === 0);
-            if (currentCount < maxC) {
-                currentCount++;
-                let speedModifier = parseFloat(document.getElementById('select-speed').value);
-                let interval = (60000 / currentBPM) / speedModifier;
-                timer = setTimeout(updateFrame, interval);
-            } else {
-                setPlayingState(false);
-            }
-        }
-    }
-
-    function updatePositionCoordinates() {
-        let m = members.find(m => m.id === selectedMemberId);
-        if (!m) return;
-        let seg = getSegmentDetails(currentCount);
-        let posA = m.positions[seg.currentIdx] || {x:50, y:50};
-        let posB = m.positions[seg.nextIdx] || posA;
-        let currentX = posA.x + (posB.x - posA.x) * seg.ratio;
-        let currentY = posA.y + (posB.y - posA.y) * seg.ratio;
-
-        let stepsFromFront = Math.round((50 - (currentY / 2)) / STEP_METER);
-        let stepsFromBack = Math.round((currentY / 2) / STEP_METER);
-        let stepsFromLeft = Math.round(currentX / STEP_METER);
-
-        document.getElementById('position-info').innerHTML = `
-            <strong>【${m.name}】の現在位置データ:</strong><br>
-            ・フロントサイドから： <strong>${stepsFromFront} 歩</strong> 奥へ<br>
-            ・バックサイドから： <strong>${stepsFromBack} 歩</strong> 手前へ<br>
-            ・左サイドラインから： <strong>${stepsFromLeft} 歩</strong> (約 ${currentX.toFixed(1)}m)
-        `;
-    }
-
     function updateHighlight() {
         let targetMember = members.find(m => m.id === selectedMemberId);
-        if (targetMember) {
-            document.getElementById('picked-member-name').innerText = `${targetMember.name} (${targetMember.part})`;
-            if (currentMode === 'view') {
-                document.getElementById('select-member').value = selectedMemberId;
-                document.getElementById('member-visual-color').style.backgroundColor = targetMember.color;
-            }
-            document.getElementById('picked-member-edit-fields').style.display = 'block';
-            document.getElementById('edit-member-part').value = targetMember.part;
-
-            document.querySelectorAll('#edit-member-color-palette .color-chip').forEach(el => {
-                el.classList.toggle('selected', el.id === `edit-chip-${targetMember.color.replace('#','')}`);
+        if(targetMember) { 
+            let selectEl = document.getElementById('select-member'); if(selectEl) selectEl.value = selectedMemberId; 
+            document.getElementById('member-visual-color').style.backgroundColor = targetMember.color; 
+            document.getElementById('picked-member-name').innerText = targetMember.name;
+            document.getElementById('edit-member-part').value = targetMember.part || "一般";
+            document.getElementById('picked-member-edit-fields').style.display = "block";
+            
+            document.querySelectorAll('.color-chip').forEach(chip => {
+                if(chip.style.backgroundColor === targetMember.color || (chip.style.backgroundColor === "rgb(30, 41, 59)" && targetMember.color === "#1e293b")) { chip.classList.add('selected-chip'); } else { chip.classList.remove('selected-chip'); }
             });
         } else {
-            document.getElementById('picked-member-edit-fields').style.display = 'none';
+            document.getElementById('picked-member-name').innerText = "なし"; document.getElementById('picked-member-edit-fields').style.display = "none";
+            document.getElementById('target-member-display-badge').innerText = `🎯 対象: 未選択`;
         }
-
-        let activeGroupMembers = [];
-        if (currentSelectedGroupName.startsWith("GLOBAL:")) {
-            let trueName = currentSelectedGroupName.replace("GLOBAL:", "");
-            activeGroupMembers = GLOBAL_GROUPS[trueName] || [];
-        } else if (currentSelectedGroupName.startsWith("SET:")) {
-            let trueName = currentSelectedGroupName.replace("SET:", "");
-            activeGroupMembers = setGroups[editingSet][trueName] || [];
-        }
-
         members.forEach(m => {
-            let dot = document.getElementById(`member-${m.id}`);
-            let badge = document.getElementById(`badge-${m.id}`);
-            if(dot) {
-                dot.className = 'member-dot';
-                if (m.id === selectedMemberId) {
-                    dot.classList.add('active');
-                    if(badge) badge.classList.add('active-badge'); // 選択した点のみ座標ポップアップを表示
-                } else {
-                    if(badge) badge.classList.remove('active-badge');
-                    if (targetMember && m.part === targetMember.part) dot.classList.add('part');
-                }
-                
-                if (currentMode === 'edit' && activeGroupMembers.includes(m.id)) {
-                    dot.classList.add('group-member');
-                }
-            }
-            for(let s=1; s<=totalSetsCount; s++) {
-                let sd = document.querySelector(`.sub-dot-${s}-${m.id}`);
-                if(sd) {
-                    sd.className = `sub-dot sub-dot-${s}-${m.id}`;
-                    if (m.id === selectedMemberId) sd.classList.add('active');
-                }
-            }
+            let dot = document.getElementById(`member-${m.id}`); let badge = document.getElementById(`badge-${m.id}`);
+            if(dot) { dot.className = m.id === selectedMemberId ? 'member-dot active' : 'member-dot'; }
+            if(badge) { badge.className = m.id === selectedMemberId ? 'coordinate-badge active-badge' : 'coordinate-badge'; }
         });
-        updatePositionCoordinates();
-        buildPersonalMovementTimeline();
+        buildSubFields(); buildPersonalMovementTimeline();
     }
 
-    const togglePlayBtn = document.getElementById('btn-toggle-play');
-    function setPlayingState(playing) {
-        isPlaying = playing;
-        if(isPlaying) { togglePlayBtn.innerText = "⏸️ 一時停止"; togglePlayBtn.classList.add('play-active'); } 
-        else { togglePlayBtn.innerText = "▶️ 再生"; togglePlayBtn.classList.remove('play-active'); }
+    function openPrintPDFWindow() {
+        let targetMember = members.find(m => m.id === selectedMemberId); if(!targetMember) return alert("マイポジションを先に選択してください。");
+        if(isPlaying) togglePlay(); const printArea = document.getElementById('print-pdf-area'); printArea.innerHTML = '';
+        let htmlContent = `<div class="pdf-page-header"><h1 style="margin:0; font-size:18pt;">マーチング・ドリル指示書</h1><p style="margin:4px 0 0 0; font-size:11pt;">🎯 マイポジション: <strong>${targetMember.name}</strong></p></div>`;
+        for (let s = 1; s <= totalSetsCount; s++) {
+            let startCount = setEndCounts[s]; let endCount = (s < totalSetsCount) ? setEndCounts[s + 1] : startCount + 8; let duration = endCount - startCount;
+            htmlContent += `<div class="pdf-set-row"><div class="pdf-left-map"><div class="pdf-map-title">■ セット ${getSetName(s)} （${getSetAndBeatString(startCount)}〜 / 計 ${duration}拍）</div><div class="sub-field-container">${generateGridLinesHTML()}${generateDotsWithCoordinatesHTMLForSet(s)}</div></div><div class="pdf-right-info"><div class="pdf-beat-list-title">⏱️ カウント別動き</div><table class="pdf-beat-table"><thead><tr><th style="width:25%;">カウント位置</th><th style="width:35%;">マイ座標</th><th style="width:40%;">指示ノート</th></tr></thead><tbody>${generateBeatRowsHTML(s, startCount, endCount, targetMember)}</tbody></table></div></div>`;
+        }
+        printArea.innerHTML = htmlContent; window.print();
     }
 
-    togglePlayBtn.onclick = () => {
-        if (!isPlaying) { 
-            let maxC = getMaxCount();
-            if (currentCount >= maxC) currentCount = 0; 
-            setPlayingState(true); updateFrame(); 
-        } 
-        else { setPlayingState(false); clearTimeout(timer); }
-    };
+    function generateGridLinesHTML() {
+        let lines = '';
+        for(let pct = 10; pct < 100; pct += 10) lines += `<div class="grid-line ${pct%20===0?'major':''}" style="top:${pct}%; left:0; width:100%; height:1px;"></div>`;
+        for(let pct = 12.5; pct < 100; pct += 12.5) lines += `<div class="grid-line ${pct%25===0?'major':''}" style="left:${pct}%; top:0; width:1px; height:100%;"></div>`;
+        return lines;
+    }
 
-    initColorPalettes();
-    renderSetButtons();
-    updateJumpSetSelector();
-    initMembers();
-    buildSubFields();
-    buildTimelineUI();
-    buildVideoTimelineTicks();
-    setupVideoTimeline();
-    updateGroupUI();
-    switchMode('view');
+    function generateDotsWithCoordinatesHTMLForSet(setNum) {
+        let dotsHTML = '';
+        members.forEach(m => {
+            let pos = m.positions[setNum] || {x:50, y:50}; let isCurrent = (m.id === selectedMemberId);
+            let fSteps = Math.round((50 - (pos.y / 2)) / STEP_METER); let lSteps = Math.round(pos.x / STEP_METER);
+            let dotStyle = `position:absolute; width:8px; height:8px; border-radius:50%; transform:translate(-50%, -50%); left:${pos.x}%; top:${pos.y}%; background-color:${m.color}; border:1px solid #fff; ${isCurrent?'box-shadow:0 0 0 3px #ef4444; z-index:10;':''}`;
+            dotsHTML += `<div style="${dotStyle}"></div><div class="pdf-dot-coord-text" style="left:${pos.x}%; top:${pos.y}%; ${isCurrent?'font-weight:bold; background:#ef4444; border:1px solid #fff; z-index:11;':''}"> ${m.name.split(" ")[0]}(F:${fSteps},L:${lSteps}) </div>`;
+        });
+        return dotsHTML;
+    }
+
+    function generateBeatRowsHTML(setNum, start, end, targetMember) {
+        let rowsHTML = '';
+        for (let i = start; i <= end; i++) {
+            let seg = getSegmentDetails(i); let posA = targetMember.positions[seg.currentIdx] || {x:50, y:50}; let posB = targetMember.positions[seg.nextIdx] || posA;
+            let cx = posA.x + (posB.x - posA.x) * seg.ratio; let cy = posA.y + (posB.y - posA.y) * seg.ratio;
+            let fSteps = Math.round((50 - (cy / 2)) / STEP_METER); let lSteps = Math.round(cx / STEP_METER);
+            let cellNote = notes[i] || ''; let pNote = targetMember.personalNotes?.[i] || '';
+            if (pNote) cellNote += (cellNote ? ' / ' : '') + `<span style="color:#059669; font-weight:bold;">[個] ${pNote}</span>`;
+            rowsHTML += `<tr ${(i === start) ? 'class="beat-highlight"' : ''}><td>${getSetAndBeatString(i)}</td><td style="font-family:monospace;">F: ${fSteps}歩 / L: ${lSteps}</td><td>${cellNote || '—'}</td></tr>`;
+        }
+        return rowsHTML;
+    }
+
+    loadStorage(); initColorPalettes(); updateSlotsSelectorUI(); refreshAllUI(); setupVideoTimeline(); switchMode('view');
 </script>
-
 </body>
 </html>
